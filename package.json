@@ -4,12 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --config jestconfig.json",
+    "testCoverage": "jest --config jestconfig.json --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^29.5.3",
     "@typescript-eslint/eslint-plugin": "^6.4.0",
     "eslint": "^8.47.0",
     "eslint-config-prettier": "^9.0.0",
@@ -17,7 +19,9 @@
     "eslint-plugin-import": "^2.28.1",
     "eslint-plugin-n": "^16.0.1",
     "eslint-plugin-promise": "^6.1.1",
+    "jest": "^29.6.2",
     "prettier": "3.0.2",
+    "ts-jest": "^29.1.1",
     "typescript": "^5.1.6"
   }
 }
