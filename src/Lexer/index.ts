@@ -11,7 +11,7 @@ const KEYWORDS = {
     else: 'else',
 } as const;
 
-const TOKENS = {
+const TOKEN_TYPES = {
     ...KEYWORDS,
     semicolon: 'semicolon',
     assignment: 'assignment',
@@ -37,10 +37,10 @@ const TOKENS = {
     integer: 'integer',
 } as const;
 
-type TToken = (typeof TOKENS)[keyof typeof TOKENS];
+type TTokenType = (typeof TOKEN_TYPES)[keyof typeof TOKEN_TYPES];
 
 interface IToken {
-    type: TToken;
+    type: TTokenType;
     literal: string;
 }
 
@@ -52,11 +52,11 @@ class Lexer {
     public convertToTokens(text: string): IToken[] {
         this.text = text;
 
-        const tokens = this.readTokens();
+        const TOKEN_TYPES = this.readTokens();
 
         this.reset();
 
-        return tokens;
+        return TOKEN_TYPES;
     }
 
     private readTokens(): IToken[] {
@@ -74,80 +74,70 @@ class Lexer {
             }
 
             case '+': {
-                this.tokens.push({ type: TOKENS.plus, literal: character });
-
+                this.recordToken(TOKEN_TYPES.plus, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case '-': {
-                this.tokens.push({ type: TOKENS.hyphen, literal: character });
-
+                this.recordToken(TOKEN_TYPES.hyphen, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case '/': {
-                this.tokens.push({ type: TOKENS.forwardSlash, literal: character });
-
+                this.recordToken(TOKEN_TYPES.forwardSlash, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case '*': {
-                this.tokens.push({ type: TOKENS.asterisk, literal: character });
-
+                this.recordToken(TOKEN_TYPES.asterisk, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case ',': {
-                this.tokens.push({ type: TOKENS.comma, literal: character });
-
+                this.recordToken(TOKEN_TYPES.comma, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case ';': {
-                this.tokens.push({ type: TOKENS.semicolon, literal: character });
-
+                this.recordToken(TOKEN_TYPES.semicolon, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case '(': {
-                this.tokens.push({ type: TOKENS.openParenthesis, literal: character });
-
+                this.recordToken(TOKEN_TYPES.openParenthesis, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case ')': {
-                this.tokens.push({ type: TOKENS.closeParenthesis, literal: character });
-
+                this.recordToken(TOKEN_TYPES.closeParenthesis, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case '{': {
-                this.tokens.push({ type: TOKENS.openCurlyBrace, literal: character });
-
+                this.recordToken(TOKEN_TYPES.openCurlyBrace, character);
                 this.consumeCharacter();
 
                 break;
             }
 
             case '}': {
-                this.tokens.push({ type: TOKENS.closeCurlyBrace, literal: character });
-
+                this.recordToken(TOKEN_TYPES.closeCurlyBrace, character);
                 this.consumeCharacter();
 
                 break;
@@ -155,11 +145,10 @@ class Lexer {
 
             case '=': {
                 if (this.peek() === '=') {
-                    this.tokens.push({ type: TOKENS.assignment, literal: character });
-
+                    this.recordToken(TOKEN_TYPES.assignment, character);
                     this.consumeCharacter();
                 } else {
-                    this.tokens.push({ type: TOKENS.equal, literal: character });
+                    this.recordToken(TOKEN_TYPES.equal, character);
                 }
 
                 this.consumeCharacter();
@@ -170,10 +159,9 @@ class Lexer {
             case '!': {
                 if (this.peek() === '=') {
                     this.consumeCharacter();
-
-                    this.tokens.push({ type: TOKENS.notEqual, literal: character });
+                    this.recordToken(TOKEN_TYPES.notEqual, character);
                 } else {
-                    this.tokens.push({ type: TOKENS.bang, literal: character });
+                    this.recordToken(TOKEN_TYPES.bang, character);
                 }
 
                 this.consumeCharacter();
@@ -184,10 +172,9 @@ class Lexer {
             case '>': {
                 if (this.peek() === '=') {
                     this.consumeCharacter();
-
-                    this.tokens.push({ type: TOKENS.greaterThanOrEqual, literal: character });
+                    this.recordToken(TOKEN_TYPES.greaterThanOrEqual, character);
                 } else {
-                    this.tokens.push({ type: TOKENS.greaterThan, literal: character });
+                    this.recordToken(TOKEN_TYPES.greaterThan, character);
                 }
 
                 this.consumeCharacter();
@@ -198,10 +185,9 @@ class Lexer {
             case '<': {
                 if (this.peek() === '=') {
                     this.consumeCharacter();
-
-                    this.tokens.push({ type: TOKENS.lessThanOrEqual, literal: character });
+                    this.recordToken(TOKEN_TYPES.lessThanOrEqual, character);
                 } else {
-                    this.tokens.push({ type: TOKENS.lessThan, literal: character });
+                    this.recordToken(TOKEN_TYPES.lessThan, character);
                 }
 
                 this.consumeCharacter();
@@ -210,8 +196,7 @@ class Lexer {
             }
 
             case '\0': {
-                this.tokens.push({ type: TOKENS.eof, literal: character });
-
+                this.recordToken(TOKEN_TYPES.eof, character);
                 this.consumeCharacter();
 
                 return this.tokens;
@@ -221,24 +206,21 @@ class Lexer {
                 if (isLetter(character)) {
                     const word = this.consumeWord();
 
-                    if (word in KEYWORDS) {
-                        this.tokens.push({ type: word as TToken, literal: word });
-                    } else {
-                        this.tokens.push({ type: TOKENS.identifier, literal: word });
-                    }
+                    this.recordToken(
+                        word in KEYWORDS ? (word as TTokenType) : TOKEN_TYPES.identifier,
+                        word,
+                    );
 
                     break;
                 }
 
                 if (isNumber(character)) {
-                    const number = this.consumeNumber();
-
-                    this.tokens.push({ type: TOKENS.integer, literal: number });
+                    this.recordToken(TOKEN_TYPES.integer, this.consumeNumber());
 
                     break;
                 }
 
-                this.tokens.push({ type: TOKENS.illegal, literal: character });
+                this.recordToken(TOKEN_TYPES.illegal, character);
 
                 this.consumeCharacter();
 
@@ -247,6 +229,10 @@ class Lexer {
         }
 
         return this.readTokens();
+    }
+
+    private recordToken(type: TTokenType, literal: string): void {
+        this.tokens.push({ type, literal });
     }
 
     private consumeWord(): string {
