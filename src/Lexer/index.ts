@@ -1,48 +1,7 @@
+import { type TTokenType, type IToken } from './types';
+import { KEYWORDS, TOKEN_TYPES } from './tokenTypes';
 import { isLetter } from './helpers/isLetter';
 import { isNumber } from './helpers/isNumber';
-
-const KEYWORDS = {
-    const: 'const',
-    let: 'let',
-    return: 'return',
-    true: 'true',
-    false: 'false',
-    if: 'if',
-    else: 'else',
-} as const;
-
-const TOKEN_TYPES = {
-    ...KEYWORDS,
-    semicolon: 'semicolon',
-    assignment: 'assignment',
-    equal: 'equal',
-    bang: 'bang',
-    notEqual: 'not_equal',
-    greaterThan: 'greater_than',
-    greaterThanOrEqual: 'greater_than_or_equal',
-    lessThan: 'less_than',
-    lessThanOrEqual: 'less_than_or_equal',
-    openCurlyBrace: 'open_curly_brace',
-    closeCurlyBrace: 'close_curly_brace',
-    openParenthesis: 'open_parenthesis',
-    closeParenthesis: 'close_parenthesis',
-    plus: 'plus',
-    hyphen: 'hyphen',
-    forwardSlash: 'forward_slash',
-    asterisk: 'asterisk',
-    comma: 'comma',
-    identifier: 'identifier',
-    illegal: 'illegal',
-    eof: 'eof',
-    integer: 'integer',
-} as const;
-
-type TTokenType = (typeof TOKEN_TYPES)[keyof typeof TOKEN_TYPES];
-
-interface IToken {
-    type: TTokenType;
-    literal: string;
-}
 
 class Lexer {
     private currentCharacterPosition: number = 0;
@@ -60,7 +19,7 @@ class Lexer {
     }
 
     private readTokens(): IToken[] {
-        const character = this.readCharacter();
+        const character = this.peek();
 
         switch (character) {
             case '':
@@ -144,7 +103,7 @@ class Lexer {
             }
 
             case '=': {
-                if (this.peek() === '=') {
+                if (this.peek(1) === '=') {
                     this.recordToken(TOKEN_TYPES.assignment, character);
                     this.consumeCharacter();
                 } else {
@@ -157,7 +116,7 @@ class Lexer {
             }
 
             case '!': {
-                if (this.peek() === '=') {
+                if (this.peek(1) === '=') {
                     this.consumeCharacter();
                     this.recordToken(TOKEN_TYPES.notEqual, character);
                 } else {
@@ -170,7 +129,7 @@ class Lexer {
             }
 
             case '>': {
-                if (this.peek() === '=') {
+                if (this.peek(1) === '=') {
                     this.consumeCharacter();
                     this.recordToken(TOKEN_TYPES.greaterThanOrEqual, character);
                 } else {
@@ -183,7 +142,7 @@ class Lexer {
             }
 
             case '<': {
-                if (this.peek() === '=') {
+                if (this.peek(1) === '=') {
                     this.consumeCharacter();
                     this.recordToken(TOKEN_TYPES.lessThanOrEqual, character);
                 } else {
@@ -238,8 +197,8 @@ class Lexer {
     private consumeWord(): string {
         let word = '';
 
-        while (isLetter(this.readCharacter())) {
-            word += this.readCharacter();
+        while (isLetter(this.peek())) {
+            word += this.peek();
 
             this.consumeCharacter();
         }
@@ -250,8 +209,8 @@ class Lexer {
     private consumeNumber(): string {
         let number = '';
 
-        while (isNumber(this.readCharacter())) {
-            number += this.readCharacter();
+        while (isNumber(this.peek())) {
+            number += this.peek();
 
             this.consumeCharacter();
         }
@@ -259,16 +218,14 @@ class Lexer {
         return number;
     }
 
-    private readCharacter(position: number = this.currentCharacterPosition): string {
-        return position > this.text.length ? '\0' : this.text.charAt(position);
-    }
-
     private consumeCharacter(): void {
         this.currentCharacterPosition += 1;
     }
 
-    private peek(amount: number = 1): string {
-        return this.readCharacter(this.currentCharacterPosition + amount);
+    private peek(amount: number = 0): string {
+        const position = this.currentCharacterPosition + amount;
+
+        return position > this.text.length ? '\0' : this.text.charAt(position);
     }
 
     private reset(): void {
