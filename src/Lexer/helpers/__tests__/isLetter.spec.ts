@@ -1,7 +1,7 @@
 import { isLetter } from '../isLetter';
 
 describe('isLetter', () => {
-    'abcdefghijklmnopqrstuvwxyz'.split('').forEach((character) => {
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach((character) => {
         it(`should return true for ${character}`, () => {
             expect(isLetter(character)).toEqual(true);
         });
