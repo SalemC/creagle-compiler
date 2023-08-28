@@ -11,11 +11,11 @@ class Lexer {
     public convertToTokens(text: string): IToken[] {
         this.text = text;
 
-        const TOKEN_TYPES = this.readTokens();
+        const tokens = [...this.readTokens()];
 
         this.reset();
 
-        return TOKEN_TYPES;
+        return tokens;
     }
 
     private readTokens(): IToken[] {
@@ -222,14 +222,15 @@ class Lexer {
         this.currentCharacterPosition += 1;
     }
 
-    private peek(amount: number = 0): string {
-        const position = this.currentCharacterPosition + amount;
+    private peek(offset: number = 0): string {
+        const position = this.currentCharacterPosition + offset;
 
         return position > this.text.length ? '\0' : this.text.charAt(position);
     }
 
     private reset(): void {
         this.text = '';
+        this.tokens.length = 0;
         this.currentCharacterPosition = 0;
     }
 }
