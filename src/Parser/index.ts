@@ -1,5 +1,5 @@
-import { TOKEN_TYPES } from '../Lexer/tokenTypes';
 import { type TTokenType, type IToken } from '../Lexer/types';
+import { TOKEN_TYPES } from '../Lexer/tokenTypes';
 
 interface INodeExpressionIdentifier {
     token: IToken;
@@ -11,17 +11,19 @@ interface INodeExpressionIntegerLiteral {
 
 type TNodeExpression = INodeExpressionIntegerLiteral | INodeExpressionIdentifier;
 
-interface INodeStatementBase {
-    type: unknown;
-}
-
-interface INodeStatementConst extends INodeStatementBase {
+interface INodeStatementConst {
     type: 'const';
     identifier: IToken;
     expression: TNodeExpression;
 }
 
-type TNodeStatement = INodeStatementConst;
+interface INodeStatementReturn {
+    type: 'return';
+    identifier: IToken;
+    expression: TNodeExpression;
+}
+
+type TNodeStatement = INodeStatementConst | INodeStatementReturn;
 
 class Parser {
     private readonly statements: TNodeStatement[] = [];
@@ -80,8 +82,38 @@ class Parser {
                 break;
             }
 
+            case TOKEN_TYPES.return: {
+                this.consumeToken();
+
+                const identifier = this.peek();
+
+                if (!this.isTokenOfType(identifier, TOKEN_TYPES.identifier)) {
+                    throw new Error('Expected identifier');
+                }
+
+                const expression = this.parseExpression();
+
+                const semiColon = this.peek();
+
+                if (!this.isTokenOfType(semiColon, TOKEN_TYPES.semicolon)) {
+                    throw new Error('Expected missing semi colon');
+                }
+
+                this.consumeToken();
+
+                this.statements.push({ type: 'return', identifier, expression });
+
+                break;
+            }
+
+            case TOKEN_TYPES.eof: {
+                this.consumeToken();
+
+                break;
+            }
+
             default: {
-                throw new Error('Invalid token');
+                throw new Error('Invalid token: ' + JSON.stringify(token));
             }
         }
 
