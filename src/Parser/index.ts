@@ -8,13 +8,13 @@ import { TOKEN_TYPES } from '../Lexer/tokenTypes';
 class Parser {
     private readonly statements: TNodeStatement[] = [];
     private currentTokenPosition: number = 0;
-    private tokens: IToken[] = [];
+    private readonly tokens: IToken[] = [];
 
     public parseTokens(tokens: IToken[]): TNodeStatement[] {
         this.reset();
 
-        // Avoid modifying the original token list.
-        this.tokens = [...tokens];
+        // Copy all the original tokens into our list of tokens to avoid modifying the original array.
+        this.tokens.push(...tokens);
 
         return this.parseStatements();
     }
