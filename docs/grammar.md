@@ -6,25 +6,21 @@ $$
         \text{terminate}([\text{Expression}]); \\
         \text{const} \space \text{identifier} = [\text{Expression}]; \\
     \end{cases} \\
-
     [\text{Expression}] &\to
     \begin{cases}
         [\text{Term}] \\
         [\text{BinaryExpression}] \\
     \end{cases} \\
-
     [\text{BinaryExpression}] &\to
     \begin{cases}
         \text{Expression} + \text{Expression} \\
         \text{Expression} - \text{Expression} \\
     \end{cases} \\
-
     [\text{Term}] &\to
     \begin{cases}
         \text{IntegerLiteral} \\
         \text{identifier} \\
     \end{cases} \\
-
     [\text{IntegerLiteral}] &\to \{1,2,3,\ldots,\infty\} \\
 \end{align}
 $$
