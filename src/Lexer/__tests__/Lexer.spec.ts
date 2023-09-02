@@ -215,4 +215,37 @@ describe('Lexer', () => {
             },
         ]);
     });
+
+    it('should lex illegal character', () => {
+        const lexer = new Lexer();
+
+        const tokens = lexer.convertToTokens('10 * 20 @ 10');
+
+        expect(tokens).toEqual([
+            {
+                type: 'integer',
+                literal: '10',
+            },
+            {
+                type: 'asterisk',
+                literal: '*',
+            },
+            {
+                type: 'integer',
+                literal: '20',
+            },
+            {
+                type: 'illegal',
+                literal: '@',
+            },
+            {
+                type: 'integer',
+                literal: '10',
+            },
+            {
+                type: 'eof',
+                literal: '\0',
+            },
+        ]);
+    });
 });
