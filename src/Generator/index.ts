@@ -1,8 +1,8 @@
 import { type INodeTerm, type TNodeExpression, type TNodeStatement } from '../Parser/types';
-import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
-import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { UnhandledExpressionTypeError } from './errors/UnhandledExpressionTypeError';
+import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
 import { UnhandledStatementTypeError } from './errors/UnhandledStatementTypeError';
+import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { UnhandledTermTypeError } from './errors/UnhandledTermTypeError';
 import { type TVariableList } from './types';
 
