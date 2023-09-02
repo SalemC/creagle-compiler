@@ -1,25 +1,18 @@
 import { type TTokenType, type IToken } from '../Lexer/types';
 import { TOKEN_TYPES } from '../Lexer/tokenTypes';
 
-interface INodeExpressionIdentifier {
-    token: IToken;
-}
+type TNodeExpressionIdentifier = IToken;
+type TNodeExpressionIntegerLiteral = IToken;
 
-interface INodeExpressionIntegerLiteral {
-    token: IToken;
-}
-
-type TNodeExpression = INodeExpressionIntegerLiteral | INodeExpressionIdentifier;
+type TNodeExpression = TNodeExpressionIntegerLiteral | TNodeExpressionIdentifier;
 
 interface INodeStatementConst {
     type: 'const';
-    identifier: IToken;
     expression: TNodeExpression;
 }
 
 interface INodeStatementReturn {
     type: 'return';
-    identifier: IToken;
     expression: TNodeExpression;
 }
 
@@ -77,19 +70,13 @@ class Parser {
 
                 this.consumeToken();
 
-                this.statements.push({ type: 'const', identifier, expression });
+                this.statements.push({ type: 'const', expression });
 
                 break;
             }
 
             case TOKEN_TYPES.return: {
                 this.consumeToken();
-
-                const identifier = this.peek();
-
-                if (!this.isTokenOfType(identifier, TOKEN_TYPES.identifier)) {
-                    throw new Error('Expected identifier');
-                }
 
                 const expression = this.parseExpression();
 
@@ -101,7 +88,7 @@ class Parser {
 
                 this.consumeToken();
 
-                this.statements.push({ type: 'return', identifier, expression });
+                this.statements.push({ type: 'return', expression });
 
                 break;
             }
@@ -126,13 +113,13 @@ class Parser {
         if (this.isTokenOfType(token, TOKEN_TYPES.integer)) {
             this.consumeToken();
 
-            return { token };
+            return token;
         }
 
         if (this.isTokenOfType(token, TOKEN_TYPES.identifier)) {
             this.consumeToken();
 
-            return { token };
+            return token;
         }
 
         throw new Error('Invalid expression');
