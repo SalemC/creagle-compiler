@@ -11,7 +11,7 @@ class Generator {
     private itemsOnStack: number = 0;
     private assembly: string = '';
 
-    public generateAssembly(statements: TNodeStatement[]): string {
+    public generateAssembly(statements: readonly TNodeStatement[]): string {
         this.reset();
 
         // We don't use the appendAssemblyLine method here because these assembly lines should not be indented.
