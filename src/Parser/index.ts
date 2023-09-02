@@ -2,8 +2,8 @@ import { type INodeExpressionTerm, type TNodeExpression, type TNodeStatement } f
 import { InvalidExpressionError } from './errors/InvalidExpressionError';
 import { InvalidIdentifierError } from './errors/InvalidIdentifierError';
 import { InvalidTokenError } from './errors/InvalidTokenError';
-import { type TTokenType, type IToken } from '../Lexer/types';
 import { TOKEN_TYPES } from '../Lexer/tokenTypes';
+import { type IToken } from '../Lexer/types';
 
 class Parser {
     private readonly statements: TNodeStatement[] = [];
@@ -22,6 +22,8 @@ class Parser {
     private parseStatements(): TNodeStatement[] {
         const token = this.peek();
 
+        // The token is null when there's no more tokens to parse.
+        // When that happens, we'll want to return all the parsed statements.
         if (token === null) {
             return this.statements;
         }
@@ -32,13 +34,13 @@ class Parser {
 
                 const identifier = this.peek();
 
-                if (!this.isTokenOfType(identifier, TOKEN_TYPES.identifier)) {
+                if (identifier?.type !== TOKEN_TYPES.identifier) {
                     throw new InvalidIdentifierError();
                 }
 
                 this.consumeToken();
 
-                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.equal)) {
+                if (this.peek()?.type !== TOKEN_TYPES.equal) {
                     throw new InvalidTokenError('=');
                 }
 
@@ -46,7 +48,7 @@ class Parser {
 
                 const expression = this.parseExpression();
 
-                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.semicolon)) {
+                if (this.peek()?.type !== TOKEN_TYPES.semicolon) {
                     throw new InvalidTokenError(';');
                 }
 
@@ -60,7 +62,7 @@ class Parser {
             case TOKEN_TYPES.terminate: {
                 this.consumeToken();
 
-                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.openParenthesis)) {
+                if (this.peek()?.type !== TOKEN_TYPES.openParenthesis) {
                     throw new InvalidTokenError('(');
                 }
 
@@ -68,13 +70,13 @@ class Parser {
 
                 const expression = this.parseExpression();
 
-                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.closeParenthesis)) {
+                if (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
                     throw new InvalidTokenError(')');
                 }
 
                 this.consumeToken();
 
-                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.semicolon)) {
+                if (this.peek()?.type !== TOKEN_TYPES.semicolon) {
                     throw new InvalidTokenError(';');
                 }
 
@@ -104,7 +106,7 @@ class Parser {
 
         const nextToken = this.peek();
 
-        if (this.isTokenOfType(nextToken, TOKEN_TYPES.plus)) {
+        if (nextToken?.type === TOKEN_TYPES.plus) {
             this.consumeToken();
 
             return {
@@ -114,7 +116,7 @@ class Parser {
             };
         }
 
-        if (this.isTokenOfType(nextToken, TOKEN_TYPES.hyphen)) {
+        if (nextToken?.type === TOKEN_TYPES.hyphen) {
             this.consumeToken();
 
             return {
@@ -130,23 +132,19 @@ class Parser {
     private parseTerm(): INodeExpressionTerm {
         const token = this.peek();
 
-        if (this.isTokenOfType(token, TOKEN_TYPES.integer)) {
+        if (token?.type === TOKEN_TYPES.integer) {
             this.consumeToken();
 
-            return { type: 'term', term: { type: 'integer', token } };
+            return { type: 'term', term: { type: 'integer', literal: token.literal } };
         }
 
-        if (this.isTokenOfType(token, TOKEN_TYPES.identifier)) {
+        if (token?.type === TOKEN_TYPES.identifier) {
             this.consumeToken();
 
-            return { type: 'term', term: { type: 'identifier', token } };
+            return { type: 'term', term: { type: 'identifier', literal: token.literal } };
         }
 
         throw new InvalidExpressionError();
-    }
-
-    private isTokenOfType(token: IToken | null, type: TTokenType): token is IToken {
-        return token !== null && token.type === type;
     }
 
     private consumeToken(): void {

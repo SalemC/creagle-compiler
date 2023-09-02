@@ -111,7 +111,7 @@ class Generator {
     private generateTerm(term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
-                this.appendAssemblyLine(`mov rax, ${term.token.literal}`);
+                this.appendAssemblyLine(`mov rax, ${term.literal}`);
 
                 this.pushToStack('rax');
 
@@ -119,7 +119,7 @@ class Generator {
             }
 
             case 'identifier': {
-                const identifier = term.token.literal;
+                const identifier = term.literal;
 
                 if (!(identifier in this.variables)) {
                     throw new UndeclaredIdentifierError(identifier);
