@@ -10,7 +10,7 @@ class Parser {
     private currentTokenPosition: number = 0;
     private readonly tokens: IToken[] = [];
 
-    public parseTokens(tokens: IToken[]): TNodeStatement[] {
+    public parseTokens(tokens: readonly IToken[]): TNodeStatement[] {
         this.reset();
 
         // Copy all the original tokens into our list of tokens to avoid modifying the original array.
