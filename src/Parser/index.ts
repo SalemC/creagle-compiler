@@ -4,7 +4,9 @@ import { TOKEN_TYPES } from '../Lexer/tokenTypes';
 type TNodeExpressionIdentifier = IToken;
 type TNodeExpressionIntegerLiteral = IToken;
 
-type TNodeExpression = TNodeExpressionIntegerLiteral | TNodeExpressionIdentifier;
+type TNodeTerm = TNodeExpressionIntegerLiteral | TNodeExpressionIdentifier;
+
+type TNodeExpression = TNodeTerm;
 
 interface INodeStatementConst {
     type: 'const';
