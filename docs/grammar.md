@@ -3,7 +3,7 @@ $$
     [\text{Program}] &\to [\text{Statement}]^* \\
     [\text{Statement}] &\to
     \begin{cases}
-        \text{return} \space [\text{Expr}]; \\
+        \text{terminate}([\text{Expr}]); \\
         \text{const} \space \text{identifier} = [\text{Expr}]; \\
     \end{cases} \\
 
