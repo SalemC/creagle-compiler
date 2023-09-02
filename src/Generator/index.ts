@@ -7,9 +7,9 @@ import { UnhandledTermTypeError } from './errors/UnhandledTermTypeError';
 import { type TVariableList } from './types';
 
 class Generator {
-    private assembly: string = '';
-    private itemsOnStack: number = 0;
     private readonly variables: TVariableList = {};
+    private itemsOnStack: number = 0;
+    private assembly: string = '';
 
     public generateAssembly(statements: TNodeStatement[]): string {
         this.reset();
