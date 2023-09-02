@@ -1,6 +1,6 @@
+import { type INodeExpressionTerm, type TNodeExpression, type TNodeStatement } from './types';
 import { InvalidExpressionError } from './errors/InvalidExpressionError';
 import { InvalidIdentifierError } from './errors/InvalidIdentifierError';
-import { type TNodeExpression, type TNodeStatement } from './types';
 import { InvalidTokenError } from './errors/InvalidTokenError';
 import { type TTokenType, type IToken } from '../Lexer/types';
 import { TOKEN_TYPES } from '../Lexer/tokenTypes';
@@ -10,7 +10,7 @@ class Parser {
     private currentTokenPosition: number = 0;
     private readonly tokens: IToken[] = [];
 
-    public parseTokens(tokens: IToken[]): TNodeStatement[] {
+    public parseTokens(tokens: readonly IToken[]): TNodeStatement[] {
         this.reset();
 
         // Copy all the original tokens into our list of tokens to avoid modifying the original array.
@@ -38,9 +38,7 @@ class Parser {
 
                 this.consumeToken();
 
-                const assignmentOperator = this.peek();
-
-                if (!this.isTokenOfType(assignmentOperator, TOKEN_TYPES.equal)) {
+                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.equal)) {
                     throw new InvalidTokenError('=');
                 }
 
@@ -48,9 +46,7 @@ class Parser {
 
                 const expression = this.parseExpression();
 
-                const semiColon = this.peek();
-
-                if (!this.isTokenOfType(semiColon, TOKEN_TYPES.semicolon)) {
+                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.semicolon)) {
                     throw new InvalidTokenError(';');
                 }
 
@@ -64,9 +60,7 @@ class Parser {
             case TOKEN_TYPES.terminate: {
                 this.consumeToken();
 
-                const openParenthesis = this.peek();
-
-                if (!this.isTokenOfType(openParenthesis, TOKEN_TYPES.openParenthesis)) {
+                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.openParenthesis)) {
                     throw new InvalidTokenError('(');
                 }
 
@@ -74,17 +68,13 @@ class Parser {
 
                 const expression = this.parseExpression();
 
-                const closeParenthesis = this.peek();
-
-                if (!this.isTokenOfType(closeParenthesis, TOKEN_TYPES.closeParenthesis)) {
+                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.closeParenthesis)) {
                     throw new InvalidTokenError(')');
                 }
 
                 this.consumeToken();
 
-                const semiColon = this.peek();
-
-                if (!this.isTokenOfType(semiColon, TOKEN_TYPES.semicolon)) {
+                if (!this.isTokenOfType(this.peek(), TOKEN_TYPES.semicolon)) {
                     throw new InvalidTokenError(';');
                 }
 
@@ -110,6 +100,22 @@ class Parser {
     }
 
     private parseExpression(): TNodeExpression {
+        const term = this.parseTerm();
+
+        if (this.isTokenOfType(this.peek(), TOKEN_TYPES.plus)) {
+            this.consumeToken();
+
+            return {
+                type: 'binaryExpressionAdd',
+                lhs: term,
+                rhs: this.parseExpression(),
+            };
+        }
+
+        return term;
+    }
+
+    private parseTerm(): INodeExpressionTerm {
         const token = this.peek();
 
         if (this.isTokenOfType(token, TOKEN_TYPES.integer)) {

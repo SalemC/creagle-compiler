@@ -1,17 +1,21 @@
-import { type INodeTerm, type TNodeExpression, type TNodeStatement } from '../Parser/types';
 import { UnhandledExpressionTypeError } from './errors/UnhandledExpressionTypeError';
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
 import { UnhandledStatementTypeError } from './errors/UnhandledStatementTypeError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { UnhandledTermTypeError } from './errors/UnhandledTermTypeError';
 import { type TVariableList } from './types';
+import {
+    type INodeExpressionTerm,
+    type TNodeExpression,
+    type TNodeStatement,
+} from '../Parser/types';
 
 class Generator {
     private readonly variables: TVariableList = {};
     private itemsOnStack: number = 0;
     private assembly: string = '';
 
-    public generateAssembly(statements: TNodeStatement[]): string {
+    public generateAssembly(statements: readonly TNodeStatement[]): string {
         this.reset();
 
         // We don't use the appendAssemblyLine method here because these assembly lines should not be indented.
@@ -70,13 +74,27 @@ class Generator {
                 break;
             }
 
+            case 'binaryExpressionAdd': {
+                this.generateExpression(expression.lhs);
+                this.generateExpression(expression.rhs);
+
+                this.popFromStack('rax');
+                this.popFromStack('rbx');
+
+                this.appendAssemblyLine('add rax, rbx');
+
+                this.pushToStack('rax');
+
+                break;
+            }
+
             default: {
                 throw new UnhandledExpressionTypeError();
             }
         }
     }
 
-    private generateTerm(term: INodeTerm['term']): void {
+    private generateTerm(term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
                 this.appendAssemblyLine(`mov rax, ${term.token.literal}`);

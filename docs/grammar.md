@@ -3,13 +3,19 @@ $$
     [\text{Program}] &\to [\text{Statement}]^* \\
     [\text{Statement}] &\to
     \begin{cases}
-        \text{terminate}([\text{Expr}]); \\
-        \text{const} \space \text{identifier} = [\text{Expr}]; \\
+        \text{terminate}([\text{Expression}]); \\
+        \text{const} \space \text{identifier} = [\text{Expression}]; \\
     \end{cases} \\
 
-    [\text{Expr}] &\to
+    [\text{Expression}] &\to
     \begin{cases}
         [\text{Term}] \\
+        [\text{BinaryExpression}] \\
+    \end{cases} \\
+
+    [\text{BinaryExpression}] &\to
+    \begin{cases}
+        \text{Expression} + \text{Expression} \\
     \end{cases} \\
 
     [\text{Term}] &\to
