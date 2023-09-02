@@ -4,7 +4,7 @@ describe('Lexer', () => {
     it('should lex assignment of integer', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens(`const value = 420;`);
+        const tokens = lexer.convertToTokens('const value = 420;');
 
         expect(tokens).toEqual([
             {
@@ -37,7 +37,7 @@ describe('Lexer', () => {
     it('should lex function call with 2 integer arguments', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens(`addNumbers(10, 20);`);
+        const tokens = lexer.convertToTokens('addNumbers(10, 20);');
 
         expect(tokens).toEqual([
             {
@@ -78,7 +78,7 @@ describe('Lexer', () => {
     it('should lex variable assignment of addition of 2 integers', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens(`const x = 10 + 20;`);
+        const tokens = lexer.convertToTokens('const x = 10 + 20;');
 
         expect(tokens).toEqual([
             {
@@ -119,7 +119,7 @@ describe('Lexer', () => {
     it('should lex addition of 2 integers', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens(`10 + 20`);
+        const tokens = lexer.convertToTokens('10 + 20');
 
         expect(tokens).toEqual([
             {
@@ -144,7 +144,7 @@ describe('Lexer', () => {
     it('should lex subtraction of 2 integers', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens(`10 - 20`);
+        const tokens = lexer.convertToTokens('10 - 20');
 
         expect(tokens).toEqual([
             {
@@ -169,7 +169,7 @@ describe('Lexer', () => {
     it('should lex division of 2 integers', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens(`10 / 20`);
+        const tokens = lexer.convertToTokens('10 / 20');
 
         expect(tokens).toEqual([
             {
@@ -194,7 +194,7 @@ describe('Lexer', () => {
     it('should lex multiplication of 2 integers', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens(`10 * 20`);
+        const tokens = lexer.convertToTokens('10 * 20');
 
         expect(tokens).toEqual([
             {
