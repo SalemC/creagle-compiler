@@ -20,6 +20,7 @@ class Generator {
 
         statements.forEach(this.generateAssemblyForStatement.bind(this));
 
+        // Add an initial syscall to ensure the program always exits.
         this.appendAssemblyLine('mov rax, 60');
         this.appendAssemblyLine('mov rdi, 0');
         this.appendAssemblyLine('syscall');
