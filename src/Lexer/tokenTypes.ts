@@ -6,6 +6,7 @@ export const KEYWORDS = {
     false: 'false',
     if: 'if',
     else: 'else',
+    terminate: 'terminate',
 } as const;
 
 export const SYMBOLS = {

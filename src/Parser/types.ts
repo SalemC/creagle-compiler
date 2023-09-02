@@ -1,20 +1,31 @@
 import { type IToken } from '../Lexer/types';
 
-type TNodeExpressionIdentifier = IToken;
-type TNodeExpressionIntegerLiteral = IToken;
+interface INodeTermIdentifier {
+    type: 'identifier';
+    token: IToken;
+}
 
-type TNodeTerm = TNodeExpressionIntegerLiteral | TNodeExpressionIdentifier;
+interface INodeTermIntegerLiteral {
+    type: 'integer';
+    token: IToken;
+}
 
-export type TNodeExpression = TNodeTerm;
+export interface INodeTerm {
+    type: 'term';
+    term: INodeTermIntegerLiteral | INodeTermIdentifier;
+}
+
+export type TNodeExpression = INodeTerm;
 
 interface INodeStatementConst {
     type: 'const';
+    identifier: IToken;
     expression: TNodeExpression;
 }
 
-interface INodeStatementReturn {
-    type: 'return';
+interface INodeStatementTerminate {
+    type: 'terminate';
     expression: TNodeExpression;
 }
 
-export type TNodeStatement = INodeStatementConst | INodeStatementReturn;
+export type TNodeStatement = INodeStatementConst | INodeStatementTerminate;

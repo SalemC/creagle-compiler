@@ -1,5 +1,5 @@
 import { InvalidExpressionError } from './errors/InvalidExpressionError';
-import { MissingIdentifierError } from './errors/MissingIdentifierError';
+import { InvalidIdentifierError } from './errors/InvalidIdentifierError';
 import { type TNodeExpression, type TNodeStatement } from './types';
 import { InvalidTokenError } from './errors/InvalidTokenError';
 import { type TTokenType, type IToken } from '../Lexer/types';
@@ -11,13 +11,12 @@ class Parser {
     private tokens: IToken[] = [];
 
     public parseTokens(tokens: IToken[]): TNodeStatement[] {
-        this.tokens = [...tokens];
-
-        const statements = [...this.parseStatements()];
-
         this.reset();
 
-        return statements;
+        // Avoid modifying the original token list.
+        this.tokens = [...tokens];
+
+        return this.parseStatements();
     }
 
     private parseStatements(): TNodeStatement[] {
@@ -34,7 +33,7 @@ class Parser {
                 const identifier = this.peek();
 
                 if (!this.isTokenOfType(identifier, TOKEN_TYPES.identifier)) {
-                    throw new MissingIdentifierError();
+                    throw new InvalidIdentifierError();
                 }
 
                 this.consumeToken();
@@ -57,15 +56,31 @@ class Parser {
 
                 this.consumeToken();
 
-                this.statements.push({ type: 'const', expression });
+                this.statements.push({ type: 'const', identifier, expression });
 
                 break;
             }
 
-            case TOKEN_TYPES.return: {
+            case TOKEN_TYPES.terminate: {
+                this.consumeToken();
+
+                const openParenthesis = this.peek();
+
+                if (!this.isTokenOfType(openParenthesis, TOKEN_TYPES.openParenthesis)) {
+                    throw new InvalidTokenError('(');
+                }
+
                 this.consumeToken();
 
                 const expression = this.parseExpression();
+
+                const closeParenthesis = this.peek();
+
+                if (!this.isTokenOfType(closeParenthesis, TOKEN_TYPES.closeParenthesis)) {
+                    throw new InvalidTokenError(')');
+                }
+
+                this.consumeToken();
 
                 const semiColon = this.peek();
 
@@ -75,7 +90,7 @@ class Parser {
 
                 this.consumeToken();
 
-                this.statements.push({ type: 'return', expression });
+                this.statements.push({ type: 'terminate', expression });
 
                 break;
             }
@@ -100,13 +115,13 @@ class Parser {
         if (this.isTokenOfType(token, TOKEN_TYPES.integer)) {
             this.consumeToken();
 
-            return token;
+            return { type: 'term', term: { type: 'integer', token } };
         }
 
         if (this.isTokenOfType(token, TOKEN_TYPES.identifier)) {
             this.consumeToken();
 
-            return token;
+            return { type: 'term', term: { type: 'identifier', token } };
         }
 
         throw new InvalidExpressionError();

@@ -1,6 +1,8 @@
 class InvalidTokenError extends Error {
     constructor(expectedToken?: string) {
-        super(`Invalid token${expectedToken === undefined ? '.' : ` Expected ${expectedToken}.`}`);
+        super(
+            `Invalid token${expectedToken === undefined ? '.' : `. Expected: ${expectedToken}.`}`,
+        );
     }
 }
 

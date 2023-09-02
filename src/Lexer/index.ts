@@ -9,13 +9,11 @@ class Lexer {
     private text: string = '';
 
     public convertToTokens(text: string): IToken[] {
-        this.text = text;
-
-        const tokens = [...this.readTokens()];
-
         this.reset();
 
-        return tokens;
+        this.text = text;
+
+        return this.readTokens();
     }
 
     private readTokens(): IToken[] {
