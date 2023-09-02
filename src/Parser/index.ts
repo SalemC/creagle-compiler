@@ -1,24 +1,9 @@
+import { InvalidExpressionError } from './errors/InvalidExpressionError';
+import { MissingIdentifierError } from './errors/MissingIdentifierError';
+import { type TNodeExpression, type TNodeStatement } from './types';
+import { InvalidTokenError } from './errors/InvalidTokenError';
 import { type TTokenType, type IToken } from '../Lexer/types';
 import { TOKEN_TYPES } from '../Lexer/tokenTypes';
-
-type TNodeExpressionIdentifier = IToken;
-type TNodeExpressionIntegerLiteral = IToken;
-
-type TNodeTerm = TNodeExpressionIntegerLiteral | TNodeExpressionIdentifier;
-
-type TNodeExpression = TNodeTerm;
-
-interface INodeStatementConst {
-    type: 'const';
-    expression: TNodeExpression;
-}
-
-interface INodeStatementReturn {
-    type: 'return';
-    expression: TNodeExpression;
-}
-
-type TNodeStatement = INodeStatementConst | INodeStatementReturn;
 
 class Parser {
     private readonly statements: TNodeStatement[] = [];
@@ -49,7 +34,7 @@ class Parser {
                 const identifier = this.peek();
 
                 if (!this.isTokenOfType(identifier, TOKEN_TYPES.identifier)) {
-                    throw new Error('Expected identifier');
+                    throw new MissingIdentifierError();
                 }
 
                 this.consumeToken();
@@ -57,7 +42,7 @@ class Parser {
                 const assignmentOperator = this.peek();
 
                 if (!this.isTokenOfType(assignmentOperator, TOKEN_TYPES.equal)) {
-                    throw new Error('Expected equals');
+                    throw new InvalidTokenError('=');
                 }
 
                 this.consumeToken();
@@ -67,7 +52,7 @@ class Parser {
                 const semiColon = this.peek();
 
                 if (!this.isTokenOfType(semiColon, TOKEN_TYPES.semicolon)) {
-                    throw new Error('Expected missing semi colon');
+                    throw new InvalidTokenError(';');
                 }
 
                 this.consumeToken();
@@ -85,7 +70,7 @@ class Parser {
                 const semiColon = this.peek();
 
                 if (!this.isTokenOfType(semiColon, TOKEN_TYPES.semicolon)) {
-                    throw new Error('Expected missing semi colon');
+                    throw new InvalidTokenError(';');
                 }
 
                 this.consumeToken();
@@ -102,7 +87,7 @@ class Parser {
             }
 
             default: {
-                throw new Error('Invalid token: ' + JSON.stringify(token));
+                throw new InvalidTokenError();
             }
         }
 
@@ -124,7 +109,7 @@ class Parser {
             return token;
         }
 
-        throw new Error('Invalid expression');
+        throw new InvalidExpressionError();
     }
 
     private isTokenOfType(token: IToken | null, type: TTokenType): token is IToken {
