@@ -1,4 +1,5 @@
 import util from 'util';
+import fs from 'fs';
 
 import { Generator } from './Generator';
 import { Parser } from './Parser';
@@ -18,3 +19,7 @@ const statements = parser.parseTokens(tokens);
 console.log(util.inspect(statements, { showHidden: false, depth: null, colors: true }));
 const assembly = generator.generateAssembly(statements);
 console.log(assembly);
+
+fs.writeFile('build/output.asm', assembly, () => {
+    //
+});
