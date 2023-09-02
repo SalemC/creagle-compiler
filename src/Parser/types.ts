@@ -15,13 +15,20 @@ export interface INodeExpressionTerm {
     term: INodeExpressionTermIntegerLiteral | INodeExpressionTermIdentifier;
 }
 
-interface INodeBinaryExpressionAdd {
-    type: 'binaryExpressionAdd';
+interface INodeBinaryExpressionBase {
     lhs: TNodeExpression;
     rhs: TNodeExpression;
 }
 
-type TNodeBinaryExpression = INodeBinaryExpressionAdd;
+interface INodeBinaryExpressionAdd extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionAdd';
+}
+
+interface INodeBinaryExpressionSubtract extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionSubtract';
+}
+
+type TNodeBinaryExpression = INodeBinaryExpressionAdd | INodeBinaryExpressionSubtract;
 
 export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 

@@ -78,10 +78,24 @@ class Generator {
                 this.generateExpression(expression.lhs);
                 this.generateExpression(expression.rhs);
 
-                this.popFromStack('rax');
                 this.popFromStack('rbx');
+                this.popFromStack('rax');
 
                 this.appendAssemblyLine('add rax, rbx');
+
+                this.pushToStack('rax');
+
+                break;
+            }
+
+            case 'binaryExpressionSubtract': {
+                this.generateExpression(expression.lhs);
+                this.generateExpression(expression.rhs);
+
+                this.popFromStack('rbx');
+                this.popFromStack('rax');
+
+                this.appendAssemblyLine('sub rax, rbx');
 
                 this.pushToStack('rax');
 

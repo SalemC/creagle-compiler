@@ -102,11 +102,23 @@ class Parser {
     private parseExpression(): TNodeExpression {
         const term = this.parseTerm();
 
-        if (this.isTokenOfType(this.peek(), TOKEN_TYPES.plus)) {
+        const nextToken = this.peek();
+
+        if (this.isTokenOfType(nextToken, TOKEN_TYPES.plus)) {
             this.consumeToken();
 
             return {
                 type: 'binaryExpressionAdd',
+                lhs: term,
+                rhs: this.parseExpression(),
+            };
+        }
+
+        if (this.isTokenOfType(nextToken, TOKEN_TYPES.hyphen)) {
+            this.consumeToken();
+
+            return {
+                type: 'binaryExpressionSubtract',
                 lhs: term,
                 rhs: this.parseExpression(),
             };

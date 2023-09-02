@@ -9,7 +9,7 @@ const parser = new Parser();
 const generator = new Generator();
 
 const tokens = lexer.convertToTokens(`
-    const value = 420;
+    const value = 10 + 20 - 30;
 
     terminate(value);
 `);
