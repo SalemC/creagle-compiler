@@ -1,21 +1,29 @@
 import { type IToken } from '../Lexer/types';
 
-interface INodeTermIdentifier {
+interface INodeExpressionTermIdentifier {
     type: 'identifier';
     token: IToken;
 }
 
-interface INodeTermIntegerLiteral {
+interface INodeExpressionTermIntegerLiteral {
     type: 'integer';
     token: IToken;
 }
 
-export interface INodeTerm {
+export interface INodeExpressionTerm {
     type: 'term';
-    term: INodeTermIntegerLiteral | INodeTermIdentifier;
+    term: INodeExpressionTermIntegerLiteral | INodeExpressionTermIdentifier;
 }
 
-export type TNodeExpression = INodeTerm;
+interface INodeBinaryExpressionAdd {
+    type: 'binaryExpressionAdd';
+    lhs: TNodeExpression;
+    rhs: TNodeExpression;
+}
+
+type TNodeBinaryExpression = INodeBinaryExpressionAdd;
+
+export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 
 interface INodeStatementConst {
     type: 'const';
