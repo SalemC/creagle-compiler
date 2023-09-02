@@ -1,13 +1,15 @@
 import { type IToken } from '../Lexer/types';
 
-interface INodeExpressionTermIdentifier {
-    type: 'identifier';
-    token: IToken;
+interface INodeExpressionTermBase {
+    literal: IToken['literal'];
 }
 
-interface INodeExpressionTermIntegerLiteral {
+interface INodeExpressionTermIdentifier extends INodeExpressionTermBase {
+    type: 'identifier';
+}
+
+interface INodeExpressionTermIntegerLiteral extends INodeExpressionTermBase {
     type: 'integer';
-    token: IToken;
 }
 
 export interface INodeExpressionTerm {
