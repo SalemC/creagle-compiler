@@ -1,15 +1,16 @@
+import util from 'util';
+
+import { Parser } from './Parser';
 import { Lexer } from './Lexer';
 
 const lexer = new Lexer();
+const parser = new Parser();
 
 const tokens = lexer.convertToTokens(`
     const value = 420;
 
-    if (value == 69) {
-        return true;
-    } else {
-        return false;
-    }
+    terminate(value);
 `);
-
 console.log(tokens);
+const statements = parser.parseTokens(tokens);
+console.log(util.inspect(statements, { showHidden: false, depth: null, colors: true }));

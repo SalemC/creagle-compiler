@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "npx tsc",
+    "run": "node ./build/main.js",
     "test": "jest --config jestconfig.json",
     "testCoverage": "jest --config jestconfig.json --coverage"
   },
