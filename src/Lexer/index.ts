@@ -1,11 +1,12 @@
-import { type TTokenType, type IToken } from './types';
+import { type TTokenType, type IToken, type ILocation } from './types';
 import { KEYWORDS, TOKEN_TYPES } from './tokenTypes';
 import { isLetter } from './helpers/isLetter';
 import { isNumber } from './helpers/isNumber';
 
 class Lexer {
-    private currentCharacterPosition: number = 0;
+    private readonly currentLocation: ILocation = { row: 0, column: 0 };
     private readonly tokens: IToken[] = [];
+    private cursorPosition: number = 0;
     private text: string = '';
 
     public convertToTokens(text: string): IToken[] {
@@ -22,10 +23,32 @@ class Lexer {
         switch (character) {
             case '':
             case ' ':
-            case '\n':
-            case '\t':
+            case '\t': {
+                this.consumeCharacter();
+
+                break;
+            }
+
+            // Carriage return character moves the cursor to the beginning of the line.
             case '\r': {
                 this.consumeCharacter();
+
+                this.currentLocation.column = 0;
+
+                break;
+            }
+
+            // Line feed character moves the cursor down a line without returning to the beginning of the line.
+            case '\n': {
+                this.consumeCharacter();
+
+                // If there's no previous carriage return character, we're parsing an LF file and therefore need to treat
+                // the line feed character like a carriage return character as well.
+                if (this.peek(-1) !== '\r') {
+                    this.currentLocation.column = 0;
+                }
+
+                this.currentLocation.row += 1;
 
                 break;
             }
@@ -115,8 +138,8 @@ class Lexer {
 
             case '!': {
                 if (this.peek(1) === '=') {
-                    this.consumeCharacter();
                     this.recordToken(TOKEN_TYPES.notEqual, character);
+                    this.consumeCharacter();
                 } else {
                     this.recordToken(TOKEN_TYPES.bang, character);
                 }
@@ -128,8 +151,8 @@ class Lexer {
 
             case '>': {
                 if (this.peek(1) === '=') {
-                    this.consumeCharacter();
                     this.recordToken(TOKEN_TYPES.greaterThanOrEqual, character);
+                    this.consumeCharacter();
                 } else {
                     this.recordToken(TOKEN_TYPES.greaterThan, character);
                 }
@@ -141,8 +164,8 @@ class Lexer {
 
             case '<': {
                 if (this.peek(1) === '=') {
-                    this.consumeCharacter();
                     this.recordToken(TOKEN_TYPES.lessThanOrEqual, character);
+                    this.consumeCharacter();
                 } else {
                     this.recordToken(TOKEN_TYPES.lessThan, character);
                 }
@@ -166,13 +189,20 @@ class Lexer {
                     this.recordToken(
                         word in KEYWORDS ? (word as TTokenType) : TOKEN_TYPES.identifier,
                         word,
+                        this.currentLocation.column - word.length,
                     );
 
                     break;
                 }
 
                 if (isNumber(character)) {
-                    this.recordToken(TOKEN_TYPES.integer, this.consumeNumber());
+                    const num = this.consumeNumber();
+
+                    this.recordToken(
+                        TOKEN_TYPES.integer,
+                        num,
+                        this.currentLocation.column - num.length,
+                    );
 
                     break;
                 }
@@ -188,8 +218,20 @@ class Lexer {
         return this.readTokens();
     }
 
-    private recordToken(type: TTokenType, literal: string): void {
-        this.tokens.push({ type, literal });
+    private recordToken(
+        type: TTokenType,
+        literal: string,
+        column: number = this.currentLocation.column,
+        row: number = this.currentLocation.row,
+    ): void {
+        this.tokens.push({
+            type,
+            literal,
+            location: {
+                column,
+                row,
+            },
+        });
     }
 
     private consumeWord(): string {
@@ -217,11 +259,12 @@ class Lexer {
     }
 
     private consumeCharacter(): void {
-        this.currentCharacterPosition += 1;
+        this.cursorPosition += 1;
+        this.currentLocation.column += 1;
     }
 
     private peek(offset: number = 0): string {
-        const position = this.currentCharacterPosition + offset;
+        const position = this.cursorPosition + offset;
 
         return position > this.text.length ? '\0' : this.text.charAt(position);
     }
@@ -229,7 +272,7 @@ class Lexer {
     private reset(): void {
         this.text = '';
         this.tokens.length = 0;
-        this.currentCharacterPosition = 0;
+        this.cursorPosition = 0;
     }
 }
 
