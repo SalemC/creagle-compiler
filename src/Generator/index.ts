@@ -129,10 +129,13 @@ class Generator {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const { stackLocationIndex } = this.variables[identifier]!;
 
+                // Calculate the memory location of an element in the stack,
+                // accounting for the fact that the top of the stack corresponds
+                // to the lowest memory address.
+                const stackMemoryOffset = (this.itemsOnStack - 1 - stackLocationIndex) * 0x08;
+
                 // Move the referenced value from wherever it is on the stack into rax.
-                this.appendAssemblyLine(
-                    `mov rax, [rsp + ${(this.itemsOnStack - stackLocationIndex - 1) * 0x08}]`,
-                );
+                this.appendAssemblyLine(`mov rax, [rsp + 0x${stackMemoryOffset.toString(16)}]`);
 
                 this.pushToStack('rax');
 

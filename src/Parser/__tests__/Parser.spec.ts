@@ -11,33 +11,64 @@ describe('Parser', () => {
             {
                 type: 'const',
                 literal: 'const',
+                location: {
+                    column: 0,
+                    row: 0,
+                },
             },
             {
                 type: 'identifier',
                 literal: 'value',
+                location: {
+                    column: 6,
+                    row: 0,
+                },
             },
             {
                 type: 'equal',
                 literal: '=',
+                location: {
+                    column: 7,
+                    row: 0,
+                },
             },
             {
                 type: 'integer',
                 literal: '420',
+                location: {
+                    column: 8,
+                    row: 0,
+                },
             },
             {
                 type: 'semicolon',
                 literal: ';',
+                location: {
+                    column: 11,
+                    row: 0,
+                },
             },
             {
                 type: 'eof',
                 literal: '\0',
+                location: {
+                    column: 12,
+                    row: 0,
+                },
             },
         ]);
 
         expect(statements).toEqual([
             {
                 type: 'const',
-                identifier: { type: 'identifier', literal: 'value' },
+                identifier: {
+                    type: 'identifier',
+                    literal: 'value',
+                    location: {
+                        column: 6,
+                        row: 0,
+                    },
+                },
                 expression: {
                     type: 'term',
                     term: {
@@ -56,53 +87,104 @@ describe('Parser', () => {
             {
                 type: 'const',
                 literal: 'const',
+                location: {
+                    column: 0,
+                    row: 0,
+                },
             },
             {
                 type: 'identifier',
                 literal: 'value',
+                location: {
+                    column: 6,
+                    row: 0,
+                },
             },
             {
                 type: 'equal',
                 literal: '=',
+                location: {
+                    column: 7,
+                    row: 0,
+                },
             },
             {
                 type: 'integer',
                 literal: '420',
+                location: {
+                    column: 8,
+                    row: 0,
+                },
             },
             {
                 type: 'semicolon',
                 literal: ';',
+                location: {
+                    column: 11,
+                    row: 0,
+                },
             },
             {
                 type: 'const',
                 literal: 'const',
+                location: {
+                    column: 12,
+                    row: 0,
+                },
             },
             {
                 type: 'identifier',
                 literal: 'secondValue',
+                location: {
+                    column: 13,
+                    row: 0,
+                },
             },
             {
                 type: 'equal',
                 literal: '=',
+                location: {
+                    column: 25,
+                    row: 0,
+                },
             },
             {
                 type: 'identifier',
                 literal: 'value',
+                location: {
+                    column: 26,
+                    row: 0,
+                },
             },
             {
                 type: 'semicolon',
                 literal: ';',
+                location: {
+                    column: 31,
+                    row: 0,
+                },
             },
             {
                 type: 'eof',
                 literal: '\0',
+                location: {
+                    column: 32,
+                    row: 0,
+                },
             },
         ]);
 
         expect(statements).toEqual([
             {
                 type: 'const',
-                identifier: { type: 'identifier', literal: 'value' },
+                identifier: {
+                    type: 'identifier',
+                    literal: 'value',
+                    location: {
+                        column: 6,
+                        row: 0,
+                    },
+                },
                 expression: {
                     type: 'term',
                     term: {
@@ -113,7 +195,14 @@ describe('Parser', () => {
             },
             {
                 type: 'const',
-                identifier: { type: 'identifier', literal: 'secondValue' },
+                identifier: {
+                    type: 'identifier',
+                    literal: 'secondValue',
+                    location: {
+                        column: 13,
+                        row: 0,
+                    },
+                },
                 expression: {
                     type: 'term',
                     term: {
@@ -132,41 +221,80 @@ describe('Parser', () => {
             {
                 type: 'const',
                 literal: 'const',
+                location: {
+                    column: 0,
+                    row: 0,
+                },
             },
             {
                 type: 'identifier',
                 literal: 'value',
+                location: {
+                    column: 6,
+                    row: 0,
+                },
             },
             {
                 type: 'equal',
                 literal: '=',
+                location: {
+                    column: 7,
+                    row: 0,
+                },
             },
             {
                 type: 'integer',
                 literal: '420',
+                location: {
+                    column: 8,
+                    row: 0,
+                },
             },
             {
                 type: 'plus',
                 literal: '+',
+                location: {
+                    column: 9,
+                    row: 0,
+                },
             },
             {
                 type: 'integer',
                 literal: '69',
+                location: {
+                    column: 10,
+                    row: 0,
+                },
             },
             {
                 type: 'semicolon',
                 literal: ';',
+                location: {
+                    column: 12,
+                    row: 0,
+                },
             },
             {
                 type: 'eof',
                 literal: '\0',
+                location: {
+                    column: 13,
+                    row: 0,
+                },
             },
         ]);
 
         expect(statements).toEqual([
             {
                 type: 'const',
-                identifier: { type: 'identifier', literal: 'value' },
+                identifier: {
+                    type: 'identifier',
+                    literal: 'value',
+                    location: {
+                        column: 6,
+                        row: 0,
+                    },
+                },
                 expression: {
                     type: 'binaryExpressionAdd',
                     lhs: {
@@ -195,41 +323,80 @@ describe('Parser', () => {
             {
                 type: 'const',
                 literal: 'const',
+                location: {
+                    column: 0,
+                    row: 0,
+                },
             },
             {
                 type: 'identifier',
                 literal: 'value',
+                location: {
+                    column: 6,
+                    row: 0,
+                },
             },
             {
                 type: 'equal',
                 literal: '=',
+                location: {
+                    column: 7,
+                    row: 0,
+                },
             },
             {
                 type: 'integer',
                 literal: '420',
+                location: {
+                    column: 8,
+                    row: 0,
+                },
             },
             {
                 type: 'hyphen',
                 literal: '-',
+                location: {
+                    column: 9,
+                    row: 0,
+                },
             },
             {
                 type: 'integer',
                 literal: '69',
+                location: {
+                    column: 10,
+                    row: 0,
+                },
             },
             {
                 type: 'semicolon',
                 literal: ';',
+                location: {
+                    column: 12,
+                    row: 0,
+                },
             },
             {
                 type: 'eof',
                 literal: '\0',
+                location: {
+                    column: 13,
+                    row: 0,
+                },
             },
         ]);
 
         expect(statements).toEqual([
             {
                 type: 'const',
-                identifier: { type: 'identifier', literal: 'value' },
+                identifier: {
+                    type: 'identifier',
+                    literal: 'value',
+                    location: {
+                        column: 6,
+                        row: 0,
+                    },
+                },
                 expression: {
                     type: 'binaryExpressionSubtract',
                     lhs: {
@@ -259,10 +426,18 @@ describe('Parser', () => {
                 {
                     type: 'const',
                     literal: 'const',
+                    location: {
+                        column: 0,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'integer',
                     literal: '10',
+                    location: {
+                        column: 6,
+                        row: 0,
+                    },
                 },
             ]);
         }).toThrow(InvalidIdentifierError);
@@ -276,14 +451,26 @@ describe('Parser', () => {
                 {
                     type: 'const',
                     literal: 'const',
+                    location: {
+                        column: 0,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'identifier',
                     literal: 'value',
+                    location: {
+                        column: 6,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'integer',
                     literal: '10',
+                    location: {
+                        column: 11,
+                        row: 0,
+                    },
                 },
             ]);
         }).toThrow(InvalidTokenError);
@@ -297,18 +484,34 @@ describe('Parser', () => {
                 {
                     type: 'const',
                     literal: 'const',
+                    location: {
+                        column: 0,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'identifier',
                     literal: 'value',
+                    location: {
+                        column: 6,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'equal',
                     literal: '=',
+                    location: {
+                        column: 7,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'integer',
                     literal: '420',
+                    location: {
+                        column: 8,
+                        row: 0,
+                    },
                 },
             ]);
         }).toThrow(InvalidTokenError);
@@ -322,6 +525,10 @@ describe('Parser', () => {
                 {
                     type: 'unknown-invalid-token' as any,
                     literal: 'unknown-invalid-token',
+                    location: {
+                        column: 0,
+                        row: 0,
+                    },
                 },
             ]);
         }).toThrow(InvalidTokenError);
@@ -334,26 +541,50 @@ describe('Parser', () => {
             {
                 type: 'terminate',
                 literal: 'terminate',
+                location: {
+                    column: 0,
+                    row: 0,
+                },
             },
             {
                 type: 'open_parenthesis',
                 literal: '(',
+                location: {
+                    column: 9,
+                    row: 0,
+                },
             },
             {
                 type: 'integer',
                 literal: '0',
+                location: {
+                    column: 10,
+                    row: 0,
+                },
             },
             {
                 type: 'close_parenthesis',
                 literal: ')',
+                location: {
+                    column: 11,
+                    row: 0,
+                },
             },
             {
                 type: 'semicolon',
                 literal: ';',
+                location: {
+                    column: 12,
+                    row: 0,
+                },
             },
             {
                 type: 'eof',
                 literal: '\0',
+                location: {
+                    column: 13,
+                    row: 0,
+                },
             },
         ]);
 
@@ -379,10 +610,18 @@ describe('Parser', () => {
                 {
                     type: 'terminate',
                     literal: 'terminate',
+                    location: {
+                        column: 0,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'integer',
                     literal: '0',
+                    location: {
+                        column: 9,
+                        row: 0,
+                    },
                 },
             ]),
         ).toThrow(InvalidTokenError);
@@ -396,18 +635,34 @@ describe('Parser', () => {
                 {
                     type: 'terminate',
                     literal: 'terminate',
+                    location: {
+                        column: 0,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'open_parenthesis',
                     literal: '(',
+                    location: {
+                        column: 9,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'integer',
                     literal: '0',
+                    location: {
+                        column: 10,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'integer',
                     literal: '0',
+                    location: {
+                        column: 12,
+                        row: 0,
+                    },
                 },
             ]),
         ).toThrow(InvalidTokenError);
@@ -421,18 +676,34 @@ describe('Parser', () => {
                 {
                     type: 'terminate',
                     literal: 'terminate',
+                    location: {
+                        column: 0,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'open_parenthesis',
                     literal: '(',
+                    location: {
+                        column: 9,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'integer',
                     literal: '0',
+                    location: {
+                        column: 10,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'close_parenthesis',
                     literal: ')',
+                    location: {
+                        column: 11,
+                        row: 0,
+                    },
                 },
             ]),
         ).toThrow(InvalidTokenError);
@@ -446,34 +717,58 @@ describe('Parser', () => {
                 {
                     type: 'const',
                     literal: 'const',
+                    location: {
+                        column: 0,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'identifier',
                     literal: 'value',
+                    location: {
+                        column: 6,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'equal',
                     literal: '=',
+                    location: {
+                        column: 7,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'integer',
                     literal: '420',
+                    location: {
+                        column: 8,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'plus',
                     literal: '+',
-                },
-                {
-                    type: 'plus',
-                    literal: '+',
+                    location: {
+                        column: 11,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'semicolon',
                     literal: ';',
+                    location: {
+                        column: 11,
+                        row: 0,
+                    },
                 },
                 {
                     type: 'eof',
                     literal: '\0',
+                    location: {
+                        column: 12,
+                        row: 0,
+                    },
                 },
             ]),
         ).toThrow(InvalidExpressionError);
