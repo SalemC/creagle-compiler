@@ -23,17 +23,31 @@ class Lexer {
         switch (character) {
             case '':
             case ' ':
-            case '\t':
-            case '\r': {
+            case '\t': {
                 this.consumeCharacter();
 
                 break;
             }
 
-            case '\n': {
+            // Carriage return character moves the cursor to the beginning of the line.
+            case '\r': {
                 this.consumeCharacter();
 
                 this.currentLocation.column = 0;
+
+                break;
+            }
+
+            // Line feed character moves the cursor down a line without returning to the beginning of the line.
+            case '\n': {
+                this.consumeCharacter();
+
+                // If there's no previous carriage return character, we're parsing an LF file and therefore need to treat
+                // the line feed character like a carriage return character as well.
+                if (this.peek(-1) !== '\r') {
+                    this.currentLocation.column = 0;
+                }
+
                 this.currentLocation.row += 1;
 
                 break;
