@@ -13,8 +13,8 @@ $$
     \end{cases} \\
     [\text{BinaryExpression}] &\to
     \begin{cases}
-        \text{Expression} + \text{Expression} \\
-        \text{Expression} - \text{Expression} \\
+        [\text{Expression}] + [\text{Expression}] \\
+        [\text{Expression}] - [\text{Expression}] \\
     \end{cases} \\
     [\text{Term}] &\to
     \begin{cases}
