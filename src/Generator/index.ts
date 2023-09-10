@@ -1,9 +1,6 @@
-import { UnhandledExpressionTypeError } from './errors/UnhandledExpressionTypeError';
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
-import { UnhandledStatementTypeError } from './errors/UnhandledStatementTypeError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
-import { UnhandledTermTypeError } from './errors/UnhandledTermTypeError';
-import { type TVariableList } from './types';
+import { type TVariableList, type TRegister } from './types';
 import {
     type INodeExpressionTerm,
     type TNodeExpression,
@@ -25,8 +22,8 @@ class Generator {
         statements.forEach(this.generateAssemblyForStatement.bind(this));
 
         // Add an initial syscall to ensure the program always exits.
-        this.appendAssemblyLine('mov rax, 60');
-        this.appendAssemblyLine('mov rdi, 0');
+        this.mov('rax', '60');
+        this.mov('rdi', '0');
         this.appendAssemblyLine('syscall');
 
         return this.assembly;
@@ -53,15 +50,15 @@ class Generator {
             case 'terminate': {
                 this.generateExpression(statement.expression);
 
-                this.appendAssemblyLine('mov rax, 60');
-                this.popFromStack('rdi');
+                this.mov('rax', '60');
+                this.pop('rdi');
                 this.appendAssemblyLine('syscall');
 
                 break;
             }
 
             default: {
-                throw new UnhandledStatementTypeError();
+                return statement satisfies never;
             }
         }
     }
@@ -75,35 +72,43 @@ class Generator {
             }
 
             case 'binaryExpressionAdd': {
-                this.generateExpression(expression.lhs);
                 this.generateExpression(expression.rhs);
+                this.generateExpression(expression.lhs);
 
-                this.popFromStack('rbx');
-                this.popFromStack('rax');
-
-                this.appendAssemblyLine('add rax, rbx');
-
-                this.pushToStack('rax');
+                this.add('rax', 'rbx');
 
                 break;
             }
 
             case 'binaryExpressionSubtract': {
-                this.generateExpression(expression.lhs);
                 this.generateExpression(expression.rhs);
+                this.generateExpression(expression.lhs);
 
-                this.popFromStack('rbx');
-                this.popFromStack('rax');
+                this.subtract('rax', 'rbx');
 
-                this.appendAssemblyLine('sub rax, rbx');
+                break;
+            }
 
-                this.pushToStack('rax');
+            case 'binaryExpressionMultiply': {
+                this.generateExpression(expression.rhs);
+                this.generateExpression(expression.lhs);
+
+                this.multiply('rbx');
+
+                break;
+            }
+
+            case 'binaryExpressionDivide': {
+                this.generateExpression(expression.rhs);
+                this.generateExpression(expression.lhs);
+
+                this.divide('rbx');
 
                 break;
             }
 
             default: {
-                throw new UnhandledExpressionTypeError();
+                return expression satisfies never;
             }
         }
     }
@@ -111,9 +116,8 @@ class Generator {
     private generateTerm(term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
-                this.appendAssemblyLine(`mov rax, ${term.literal}`);
-
-                this.pushToStack('rax');
+                this.mov('rax', term.literal);
+                this.push('rax');
 
                 break;
             }
@@ -135,29 +139,76 @@ class Generator {
                 const stackMemoryOffset = (this.itemsOnStack - 1 - stackLocationIndex) * 0x08;
 
                 // Move the referenced value from wherever it is on the stack into rax.
-                this.appendAssemblyLine(`mov rax, [rsp + 0x${stackMemoryOffset.toString(16)}]`);
+                this.mov('rax', `[rsp + 0x${stackMemoryOffset.toString(16)}]`);
+                this.push('rax');
 
-                this.pushToStack('rax');
+                break;
+            }
+
+            case 'parenthesised': {
+                this.generateExpression(term.expression);
 
                 break;
             }
 
             default: {
-                throw new UnhandledTermTypeError();
+                return term satisfies never;
             }
         }
     }
 
-    private pushToStack(register: string): void {
+    private push(register: TRegister): void {
         this.appendAssemblyLine(`push ${register}`);
 
         this.itemsOnStack += 1;
     }
 
-    private popFromStack(register: string): void {
+    private pop(register: TRegister): void {
         this.appendAssemblyLine(`pop ${register}`);
 
         this.itemsOnStack -= 1;
+    }
+
+    private mov(register: TRegister, value: string): void {
+        this.appendAssemblyLine(`mov ${register}, ${value}`);
+    }
+
+    private add(lhsRegister: TRegister, rhsRegister: TRegister): void {
+        this.pop(lhsRegister);
+        this.pop(rhsRegister);
+
+        this.appendAssemblyLine(`add ${lhsRegister}, ${rhsRegister}`);
+
+        this.push(lhsRegister);
+    }
+
+    private subtract(lhsRegister: TRegister, rhsRegister: TRegister): void {
+        this.pop(lhsRegister);
+        this.pop(rhsRegister);
+
+        this.appendAssemblyLine(`sub ${lhsRegister}, ${rhsRegister}`);
+
+        this.push(lhsRegister);
+    }
+
+    private multiply(sourceRegister: TRegister): void {
+        // 'mul' always uses 'rax' as the left operand, then stores the result in 'rax'.
+        this.pop('rax');
+        this.pop(sourceRegister);
+
+        this.appendAssemblyLine(`mul ${sourceRegister}`);
+
+        this.push('rax');
+    }
+
+    private divide(sourceRegister: TRegister): void {
+        // 'div' always uses 'rax' as the left operand, then stores the result in 'rax'.
+        this.pop('rax');
+        this.pop(sourceRegister);
+
+        this.appendAssemblyLine(`div ${sourceRegister}`);
+
+        this.push('rax');
     }
 
     private appendAssemblyLine(text: string): void {

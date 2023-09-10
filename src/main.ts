@@ -10,7 +10,7 @@ const parser = new Parser();
 const generator = new Generator();
 
 const tokens = lexer.convertToTokens(`
-    const value = 10 + 20 - 30;
+    const value = 8 + 2 * 8;
 
     terminate(value);
 `);
@@ -20,6 +20,4 @@ console.log(util.inspect(statements, { showHidden: false, depth: null, colors: t
 const assembly = generator.generateAssembly(statements);
 console.log(assembly);
 
-fs.writeFile('build/output.asm', assembly, () => {
-    //
-});
+fs.writeFileSync('build/output.asm', assembly);

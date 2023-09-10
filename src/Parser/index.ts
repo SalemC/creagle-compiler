@@ -1,9 +1,15 @@
-import { type INodeExpressionTerm, type TNodeExpression, type TNodeStatement } from './types';
+import { UnhandledBinaryExpressionOperatorError } from './errors/UnhandledBinaryExpressionOperatorError';
 import { InvalidExpressionError } from './errors/InvalidExpressionError';
 import { InvalidIdentifierError } from './errors/InvalidIdentifierError';
 import { InvalidTokenError } from './errors/InvalidTokenError';
+import { type TTokenType, type IToken } from '../Lexer/types';
 import { TOKEN_TYPES } from '../Lexer/tokenTypes';
-import { type IToken } from '../Lexer/types';
+import {
+    type TNodeBinaryExpression,
+    type INodeExpressionTerm,
+    type TNodeExpression,
+    type TNodeStatement,
+} from './types';
 
 class Parser {
     private readonly statements: TNodeStatement[] = [];
@@ -101,50 +107,131 @@ class Parser {
         return this.parseStatements();
     }
 
-    private parseExpression(): TNodeExpression {
+    private parseExpression(minimumPrecedence: number = 0): TNodeExpression {
         const term = this.parseTerm();
 
-        const nextToken = this.peek();
+        let expression: TNodeExpression = term;
 
-        if (nextToken?.type === TOKEN_TYPES.plus) {
+        while (true) {
+            const currentToken = this.peek();
+
+            if (currentToken === null) {
+                break;
+            }
+
+            const precedence = this.getBinaryOperatorPrecedence(currentToken.type);
+
+            if (precedence === null || precedence < minimumPrecedence) {
+                break;
+            }
+
             this.consumeToken();
 
-            return {
-                type: 'binaryExpressionAdd',
-                lhs: term,
-                rhs: this.parseExpression(),
+            const nextMinimumPrecedence = precedence + 1;
+
+            const binaryExpressionBase: Omit<TNodeBinaryExpression, 'type'> = {
+                lhs: expression,
+                rhs: this.parseExpression(nextMinimumPrecedence),
             };
+
+            switch (currentToken.type) {
+                case TOKEN_TYPES.forwardSlash: {
+                    expression = {
+                        ...binaryExpressionBase,
+                        type: 'binaryExpressionDivide',
+                    };
+
+                    break;
+                }
+
+                case TOKEN_TYPES.asterisk: {
+                    expression = {
+                        ...binaryExpressionBase,
+                        type: 'binaryExpressionMultiply',
+                    };
+
+                    break;
+                }
+
+                case TOKEN_TYPES.plus: {
+                    expression = {
+                        ...binaryExpressionBase,
+                        type: 'binaryExpressionAdd',
+                    };
+
+                    break;
+                }
+
+                case TOKEN_TYPES.hyphen: {
+                    expression = {
+                        ...binaryExpressionBase,
+                        type: 'binaryExpressionSubtract',
+                    };
+
+                    break;
+                }
+
+                default: {
+                    throw new UnhandledBinaryExpressionOperatorError(currentToken.type);
+                }
+            }
         }
 
-        if (nextToken?.type === TOKEN_TYPES.hyphen) {
-            this.consumeToken();
-
-            return {
-                type: 'binaryExpressionSubtract',
-                lhs: term,
-                rhs: this.parseExpression(),
-            };
-        }
-
-        return term;
+        return expression;
     }
 
     private parseTerm(): INodeExpressionTerm {
         const token = this.peek();
 
-        if (token?.type === TOKEN_TYPES.integer) {
-            this.consumeToken();
+        switch (token?.type) {
+            case TOKEN_TYPES.integer: {
+                this.consumeToken();
 
-            return { type: 'term', term: { type: 'integer', literal: token.literal } };
+                return { type: 'term', term: { type: 'integer', literal: token.literal } };
+            }
+
+            case TOKEN_TYPES.identifier: {
+                this.consumeToken();
+
+                return { type: 'term', term: { type: 'identifier', literal: token.literal } };
+            }
+
+            case TOKEN_TYPES.openParenthesis: {
+                this.consumeToken();
+
+                const expression = this.parseExpression();
+
+                if (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
+                    throw new InvalidTokenError(')');
+                }
+
+                this.consumeToken();
+
+                return { type: 'term', term: { type: 'parenthesised', expression } };
+            }
+
+            default: {
+                throw new InvalidExpressionError();
+            }
         }
+    }
 
-        if (token?.type === TOKEN_TYPES.identifier) {
-            this.consumeToken();
+    private getBinaryOperatorPrecedence(tokenType: TTokenType): number | null {
+        switch (tokenType) {
+            case 'forward_slash':
+            case 'asterisk': {
+                return 1;
+            }
 
-            return { type: 'term', term: { type: 'identifier', literal: token.literal } };
+            case 'hyphen':
+            case 'plus': {
+                return 0;
+            }
+
+            default: {
+                return null;
+            }
         }
-
-        throw new InvalidExpressionError();
     }
 
     private consumeToken(): void {
