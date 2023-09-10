@@ -22,8 +22,8 @@ class Generator {
         statements.forEach(this.generateAssemblyForStatement.bind(this));
 
         // Add an initial syscall to ensure the program always exits.
-        this.mov('rax', '60');
-        this.mov('rdi', '0');
+        this.move('rax', '60');
+        this.move('rdi', '0');
         this.appendAssemblyLine('syscall');
 
         return this.assembly;
@@ -50,7 +50,7 @@ class Generator {
             case 'terminate': {
                 this.generateExpression(statement.expression);
 
-                this.mov('rax', '60');
+                this.move('rax', '60');
                 this.pop('rdi');
                 this.appendAssemblyLine('syscall');
 
@@ -116,7 +116,7 @@ class Generator {
     private generateTerm(term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
-                this.mov('rax', term.literal);
+                this.move('rax', term.literal);
                 this.push('rax');
 
                 break;
@@ -139,7 +139,7 @@ class Generator {
                 const stackMemoryOffset = (this.itemsOnStack - 1 - stackLocationIndex) * 0x08;
 
                 // Move the referenced value from wherever it is on the stack into rax.
-                this.mov('rax', `[rsp + 0x${stackMemoryOffset.toString(16)}]`);
+                this.move('rax', `[rsp + 0x${stackMemoryOffset.toString(16)}]`);
                 this.push('rax');
 
                 break;
@@ -169,7 +169,7 @@ class Generator {
         this.itemsOnStack -= 1;
     }
 
-    private mov(register: TRegister, value: string): void {
+    private move(register: TRegister, value: string): void {
         this.appendAssemblyLine(`mov ${register}, ${value}`);
     }
 
