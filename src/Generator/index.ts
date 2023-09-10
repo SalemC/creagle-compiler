@@ -157,20 +157,20 @@ class Generator {
         }
     }
 
-    private push(register: TRegister): void {
-        this.appendAssemblyLine(`push ${register}`);
+    private push(sourceRegister: TRegister): void {
+        this.appendAssemblyLine(`push ${sourceRegister}`);
 
         this.itemsOnStack += 1;
     }
 
-    private pop(register: TRegister): void {
-        this.appendAssemblyLine(`pop ${register}`);
+    private pop(destinationRegister: TRegister): void {
+        this.appendAssemblyLine(`pop ${destinationRegister}`);
 
         this.itemsOnStack -= 1;
     }
 
-    private move(register: TRegister, value: string): void {
-        this.appendAssemblyLine(`mov ${register}, ${value}`);
+    private move(destinationRegister: TRegister, value: string): void {
+        this.appendAssemblyLine(`mov ${destinationRegister}, ${value}`);
     }
 
     private add(lhsRegister: TRegister, rhsRegister: TRegister): void {
