@@ -112,6 +112,7 @@ class Parser {
 
         let expression: TNodeExpression = term;
 
+        // Recursively descend binary operations.
         while (true) {
             const currentToken = this.peek();
 
@@ -121,6 +122,7 @@ class Parser {
 
             const precedence = this.getBinaryOperatorPrecedence(currentToken.type);
 
+            // If there's no precedence, we're not dealing with a binary operator.
             if (precedence === null || precedence < minimumPrecedence) {
                 break;
             }
@@ -129,6 +131,7 @@ class Parser {
 
             const nextMinimumPrecedence = precedence + 1;
 
+            // All binary operators share the same structure.
             const binaryExpressionBase: Omit<TNodeBinaryExpression, 'type'> = {
                 lhs: expression,
                 rhs: this.parseExpression(nextMinimumPrecedence),
@@ -137,8 +140,8 @@ class Parser {
             switch (currentToken.type) {
                 case TOKEN_TYPES.forwardSlash: {
                     expression = {
-                        ...binaryExpressionBase,
                         type: 'binaryExpressionDivide',
+                        ...binaryExpressionBase,
                     };
 
                     break;
@@ -146,8 +149,8 @@ class Parser {
 
                 case TOKEN_TYPES.asterisk: {
                     expression = {
-                        ...binaryExpressionBase,
                         type: 'binaryExpressionMultiply',
+                        ...binaryExpressionBase,
                     };
 
                     break;
@@ -155,8 +158,8 @@ class Parser {
 
                 case TOKEN_TYPES.plus: {
                     expression = {
-                        ...binaryExpressionBase,
                         type: 'binaryExpressionAdd',
+                        ...binaryExpressionBase,
                     };
 
                     break;
@@ -164,8 +167,8 @@ class Parser {
 
                 case TOKEN_TYPES.hyphen: {
                     expression = {
-                        ...binaryExpressionBase,
                         type: 'binaryExpressionSubtract',
+                        ...binaryExpressionBase,
                     };
 
                     break;
