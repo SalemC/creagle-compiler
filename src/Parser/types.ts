@@ -1,20 +1,26 @@
 import { type IToken } from '../Lexer/types';
 
-interface INodeExpressionTermBase {
+interface INodeExpressionTermIdentifier {
     literal: IToken['literal'];
-}
-
-interface INodeExpressionTermIdentifier extends INodeExpressionTermBase {
     type: 'identifier';
 }
 
-interface INodeExpressionTermIntegerLiteral extends INodeExpressionTermBase {
+interface INodeExpressionTermIntegerLiteral {
+    literal: IToken['literal'];
     type: 'integer';
+}
+
+interface INodeExpressionTermParenthesised {
+    type: 'parenthesised';
+    expression: TNodeExpression;
 }
 
 export interface INodeExpressionTerm {
     type: 'term';
-    term: INodeExpressionTermIntegerLiteral | INodeExpressionTermIdentifier;
+    term:
+        | INodeExpressionTermIntegerLiteral
+        | INodeExpressionTermIdentifier
+        | INodeExpressionTermParenthesised;
 }
 
 interface INodeBinaryExpressionBase {
@@ -30,7 +36,19 @@ interface INodeBinaryExpressionSubtract extends INodeBinaryExpressionBase {
     type: 'binaryExpressionSubtract';
 }
 
-type TNodeBinaryExpression = INodeBinaryExpressionAdd | INodeBinaryExpressionSubtract;
+interface INodeBinaryExpressionMultiply extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionMultiply';
+}
+
+interface INodeBinaryExpressionDivide extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionDivide';
+}
+
+export type TNodeBinaryExpression =
+    | INodeBinaryExpressionDivide
+    | INodeBinaryExpressionMultiply
+    | INodeBinaryExpressionAdd
+    | INodeBinaryExpressionSubtract;
 
 export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 

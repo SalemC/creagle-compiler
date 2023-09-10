@@ -9,17 +9,22 @@ const lexer = new Lexer();
 const parser = new Parser();
 const generator = new Generator();
 
+console.info('Lexing...');
 const tokens = lexer.convertToTokens(`
-    const value = 10 + 20 - 30;
+    const firstValue = 4 + 2;
+    const secondValue = 1 * 3;
+    const thirdValue = firstValue / secondValue;
 
-    terminate(value);
+    terminate(thirdValue);
 `);
 console.log(tokens);
+
+console.info('Parsing...');
 const statements = parser.parseTokens(tokens);
 console.log(util.inspect(statements, { showHidden: false, depth: null, colors: true }));
+
+console.info('Assembling...');
 const assembly = generator.generateAssembly(statements);
 console.log(assembly);
 
-fs.writeFile('build/output.asm', assembly, () => {
-    //
-});
+fs.writeFileSync('build/output.asm', assembly);
