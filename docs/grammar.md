@@ -13,13 +13,16 @@ $$
     \end{cases} \\
     [\text{BinaryExpression}] &\to
     \begin{cases}
-        [\text{Expression}] + [\text{Expression}] \\
-        [\text{Expression}] - [\text{Expression}] \\
+        [\text{Expression}] * [\text{Expression}] & \text{precedence} = 1 \\
+        [\text{Expression}]\space/\space [\text{Expression}] & \text{precedence} = 1 \\
+        [\text{Expression}] + [\text{Expression}] & \text{precedence} = 0 \\
+        [\text{Expression}] - [\text{Expression}] & \text{precedence} = 0 \\
     \end{cases} \\
     [\text{Term}] &\to
     \begin{cases}
-        \text{IntegerLiteral} \\
+        [\text{IntegerLiteral}] \\
         \text{identifier} \\
+        ([\text{Expression}]) \\
     \end{cases} \\
     [\text{IntegerLiteral}] &\to \{1,2,3,\ldots,\infty\} \\
 \end{align}
