@@ -9,6 +9,8 @@ import {
     type INodeExpressionTerm,
     type TNodeExpression,
     type TNodeStatement,
+    type TDataTypeSpecifier,
+    type TDataType,
 } from './types';
 
 class Parser {
@@ -35,7 +37,10 @@ class Parser {
         }
 
         switch (token.type) {
-            case TOKEN_TYPES.const: {
+            case TOKEN_TYPES.byte:
+            case TOKEN_TYPES.short:
+            case TOKEN_TYPES.integer:
+            case TOKEN_TYPES.long: {
                 this.consumeToken();
 
                 const identifier = this.peek();
@@ -60,7 +65,12 @@ class Parser {
 
                 this.consumeToken();
 
-                this.statements.push({ type: 'const', identifier, expression });
+                this.statements.push({
+                    type: 'variable',
+                    dataType: this.convertDataTypeSpecifierToDataType(token.type),
+                    identifier,
+                    expression,
+                });
 
                 break;
             }
@@ -235,6 +245,17 @@ class Parser {
                 return null;
             }
         }
+    }
+
+    private convertDataTypeSpecifierToDataType(dataTypeSpecifier: TDataTypeSpecifier): TDataType {
+        return (
+            {
+                byte: 'byte',
+                short: 'word',
+                integer: 'dword',
+                long: 'qword',
+            } satisfies Record<TDataTypeSpecifier, TDataType>
+        )[dataTypeSpecifier];
     }
 
     private consumeToken(): void {
