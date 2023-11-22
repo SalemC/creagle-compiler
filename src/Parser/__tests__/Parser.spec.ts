@@ -9,8 +9,8 @@ describe('Parser', () => {
 
         const statements = parser.parseTokens([
             {
-                type: 'const',
-                literal: 'const',
+                type: 'byte',
+                literal: 'byte',
                 location: {
                     column: 0,
                     row: 0,
@@ -20,7 +20,7 @@ describe('Parser', () => {
                 type: 'identifier',
                 literal: 'value',
                 location: {
-                    column: 6,
+                    column: 5,
                     row: 0,
                 },
             },
@@ -28,7 +28,7 @@ describe('Parser', () => {
                 type: 'equal',
                 literal: '=',
                 location: {
-                    column: 7,
+                    column: 6,
                     row: 0,
                 },
             },
@@ -36,7 +36,7 @@ describe('Parser', () => {
                 type: 'integer',
                 literal: '420',
                 location: {
-                    column: 8,
+                    column: 7,
                     row: 0,
                 },
             },
@@ -44,7 +44,7 @@ describe('Parser', () => {
                 type: 'semicolon',
                 literal: ';',
                 location: {
-                    column: 11,
+                    column: 10,
                     row: 0,
                 },
             },
@@ -52,7 +52,7 @@ describe('Parser', () => {
                 type: 'eof',
                 literal: '\0',
                 location: {
-                    column: 12,
+                    column: 11,
                     row: 0,
                 },
             },
@@ -60,12 +60,13 @@ describe('Parser', () => {
 
         expect(statements).toEqual([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
                     location: {
-                        column: 6,
+                        column: 5,
                         row: 0,
                     },
                 },
@@ -85,8 +86,8 @@ describe('Parser', () => {
 
         const statements = parser.parseTokens([
             {
-                type: 'const',
-                literal: 'const',
+                type: 'byte',
+                literal: 'byte',
                 location: {
                     column: 0,
                     row: 0,
@@ -96,7 +97,7 @@ describe('Parser', () => {
                 type: 'identifier',
                 literal: 'value',
                 location: {
-                    column: 6,
+                    column: 5,
                     row: 0,
                 },
             },
@@ -104,7 +105,7 @@ describe('Parser', () => {
                 type: 'equal',
                 literal: '=',
                 location: {
-                    column: 7,
+                    column: 6,
                     row: 0,
                 },
             },
@@ -112,7 +113,7 @@ describe('Parser', () => {
                 type: 'integer',
                 literal: '420',
                 location: {
-                    column: 8,
+                    column: 7,
                     row: 0,
                 },
             },
@@ -120,15 +121,15 @@ describe('Parser', () => {
                 type: 'semicolon',
                 literal: ';',
                 location: {
-                    column: 11,
+                    column: 10,
                     row: 0,
                 },
             },
             {
-                type: 'const',
-                literal: 'const',
+                type: 'byte',
+                literal: 'byte',
                 location: {
-                    column: 12,
+                    column: 10,
                     row: 0,
                 },
             },
@@ -136,7 +137,7 @@ describe('Parser', () => {
                 type: 'identifier',
                 literal: 'secondValue',
                 location: {
-                    column: 13,
+                    column: 11,
                     row: 0,
                 },
             },
@@ -144,7 +145,7 @@ describe('Parser', () => {
                 type: 'equal',
                 literal: '=',
                 location: {
-                    column: 25,
+                    column: 23,
                     row: 0,
                 },
             },
@@ -152,7 +153,7 @@ describe('Parser', () => {
                 type: 'identifier',
                 literal: 'value',
                 location: {
-                    column: 26,
+                    column: 24,
                     row: 0,
                 },
             },
@@ -160,7 +161,7 @@ describe('Parser', () => {
                 type: 'semicolon',
                 literal: ';',
                 location: {
-                    column: 31,
+                    column: 29,
                     row: 0,
                 },
             },
@@ -168,7 +169,7 @@ describe('Parser', () => {
                 type: 'eof',
                 literal: '\0',
                 location: {
-                    column: 32,
+                    column: 30,
                     row: 0,
                 },
             },
@@ -176,12 +177,13 @@ describe('Parser', () => {
 
         expect(statements).toEqual([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
                     location: {
-                        column: 6,
+                        column: 5,
                         row: 0,
                     },
                 },
@@ -194,12 +196,13 @@ describe('Parser', () => {
                 },
             },
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'secondValue',
                     location: {
-                        column: 13,
+                        column: 11,
                         row: 0,
                     },
                 },
@@ -219,8 +222,8 @@ describe('Parser', () => {
 
         const statements = parser.parseTokens([
             {
-                type: 'const',
-                literal: 'const',
+                type: 'byte',
+                literal: 'byte',
                 location: {
                     column: 0,
                     row: 0,
@@ -230,7 +233,7 @@ describe('Parser', () => {
                 type: 'identifier',
                 literal: 'value',
                 location: {
-                    column: 6,
+                    column: 5,
                     row: 0,
                 },
             },
@@ -238,7 +241,7 @@ describe('Parser', () => {
                 type: 'equal',
                 literal: '=',
                 location: {
-                    column: 7,
+                    column: 6,
                     row: 0,
                 },
             },
@@ -246,7 +249,7 @@ describe('Parser', () => {
                 type: 'integer',
                 literal: '420',
                 location: {
-                    column: 8,
+                    column: 7,
                     row: 0,
                 },
             },
@@ -254,7 +257,7 @@ describe('Parser', () => {
                 type: 'plus',
                 literal: '+',
                 location: {
-                    column: 9,
+                    column: 8,
                     row: 0,
                 },
             },
@@ -262,7 +265,7 @@ describe('Parser', () => {
                 type: 'integer',
                 literal: '69',
                 location: {
-                    column: 10,
+                    column: 9,
                     row: 0,
                 },
             },
@@ -270,7 +273,7 @@ describe('Parser', () => {
                 type: 'semicolon',
                 literal: ';',
                 location: {
-                    column: 12,
+                    column: 11,
                     row: 0,
                 },
             },
@@ -278,7 +281,7 @@ describe('Parser', () => {
                 type: 'eof',
                 literal: '\0',
                 location: {
-                    column: 13,
+                    column: 12,
                     row: 0,
                 },
             },
@@ -286,12 +289,13 @@ describe('Parser', () => {
 
         expect(statements).toEqual([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
                     location: {
-                        column: 6,
+                        column: 5,
                         row: 0,
                     },
                 },
@@ -321,8 +325,8 @@ describe('Parser', () => {
 
         const statements = parser.parseTokens([
             {
-                type: 'const',
-                literal: 'const',
+                type: 'byte',
+                literal: 'byte',
                 location: {
                     column: 0,
                     row: 0,
@@ -332,7 +336,7 @@ describe('Parser', () => {
                 type: 'identifier',
                 literal: 'value',
                 location: {
-                    column: 6,
+                    column: 5,
                     row: 0,
                 },
             },
@@ -340,7 +344,7 @@ describe('Parser', () => {
                 type: 'equal',
                 literal: '=',
                 location: {
-                    column: 7,
+                    column: 6,
                     row: 0,
                 },
             },
@@ -348,7 +352,7 @@ describe('Parser', () => {
                 type: 'integer',
                 literal: '420',
                 location: {
-                    column: 8,
+                    column: 7,
                     row: 0,
                 },
             },
@@ -356,7 +360,7 @@ describe('Parser', () => {
                 type: 'hyphen',
                 literal: '-',
                 location: {
-                    column: 9,
+                    column: 8,
                     row: 0,
                 },
             },
@@ -364,7 +368,7 @@ describe('Parser', () => {
                 type: 'integer',
                 literal: '69',
                 location: {
-                    column: 10,
+                    column: 9,
                     row: 0,
                 },
             },
@@ -372,7 +376,7 @@ describe('Parser', () => {
                 type: 'semicolon',
                 literal: ';',
                 location: {
-                    column: 12,
+                    column: 11,
                     row: 0,
                 },
             },
@@ -380,7 +384,7 @@ describe('Parser', () => {
                 type: 'eof',
                 literal: '\0',
                 location: {
-                    column: 13,
+                    column: 12,
                     row: 0,
                 },
             },
@@ -388,12 +392,13 @@ describe('Parser', () => {
 
         expect(statements).toEqual([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
                     location: {
-                        column: 6,
+                        column: 5,
                         row: 0,
                     },
                 },
@@ -418,14 +423,14 @@ describe('Parser', () => {
         ]);
     });
 
-    it('should throw when invalid identifier is used for const declaration', () => {
+    it('should throw when invalid identifier is used for variable declaration', () => {
         const parser = new Parser();
 
         expect(() => {
             parser.parseTokens([
                 {
-                    type: 'const',
-                    literal: 'const',
+                    type: 'byte',
+                    literal: 'byte',
                     location: {
                         column: 0,
                         row: 0,
@@ -435,7 +440,7 @@ describe('Parser', () => {
                     type: 'integer',
                     literal: '10',
                     location: {
-                        column: 6,
+                        column: 5,
                         row: 0,
                     },
                 },
@@ -443,14 +448,14 @@ describe('Parser', () => {
         }).toThrow(InvalidIdentifierError);
     });
 
-    it('should throw when invalid assignment operator is used for const declaration', () => {
+    it('should throw when invalid assignment operator is used for variable declaration', () => {
         const parser = new Parser();
 
         expect(() => {
             parser.parseTokens([
                 {
-                    type: 'const',
-                    literal: 'const',
+                    type: 'byte',
+                    literal: 'byte',
                     location: {
                         column: 0,
                         row: 0,
@@ -460,7 +465,7 @@ describe('Parser', () => {
                     type: 'identifier',
                     literal: 'value',
                     location: {
-                        column: 6,
+                        column: 5,
                         row: 0,
                     },
                 },
@@ -468,7 +473,7 @@ describe('Parser', () => {
                     type: 'integer',
                     literal: '10',
                     location: {
-                        column: 11,
+                        column: 10,
                         row: 0,
                     },
                 },
@@ -482,8 +487,8 @@ describe('Parser', () => {
         expect(() => {
             parser.parseTokens([
                 {
-                    type: 'const',
-                    literal: 'const',
+                    type: 'byte',
+                    literal: 'byte',
                     location: {
                         column: 0,
                         row: 0,
@@ -493,7 +498,7 @@ describe('Parser', () => {
                     type: 'identifier',
                     literal: 'value',
                     location: {
-                        column: 6,
+                        column: 5,
                         row: 0,
                     },
                 },
@@ -501,7 +506,7 @@ describe('Parser', () => {
                     type: 'equal',
                     literal: '=',
                     location: {
-                        column: 7,
+                        column: 6,
                         row: 0,
                     },
                 },
@@ -509,7 +514,7 @@ describe('Parser', () => {
                     type: 'integer',
                     literal: '420',
                     location: {
-                        column: 8,
+                        column: 7,
                         row: 0,
                     },
                 },
@@ -715,8 +720,8 @@ describe('Parser', () => {
         expect(() =>
             parser.parseTokens([
                 {
-                    type: 'const',
-                    literal: 'const',
+                    type: 'byte',
+                    literal: 'byte',
                     location: {
                         column: 0,
                         row: 0,
@@ -726,7 +731,7 @@ describe('Parser', () => {
                     type: 'identifier',
                     literal: 'value',
                     location: {
-                        column: 6,
+                        column: 5,
                         row: 0,
                     },
                 },
@@ -734,7 +739,7 @@ describe('Parser', () => {
                     type: 'equal',
                     literal: '=',
                     location: {
-                        column: 7,
+                        column: 6,
                         row: 0,
                     },
                 },
@@ -742,7 +747,7 @@ describe('Parser', () => {
                     type: 'integer',
                     literal: '420',
                     location: {
-                        column: 8,
+                        column: 7,
                         row: 0,
                     },
                 },
@@ -750,7 +755,7 @@ describe('Parser', () => {
                     type: 'plus',
                     literal: '+',
                     location: {
-                        column: 11,
+                        column: 10,
                         row: 0,
                     },
                 },
