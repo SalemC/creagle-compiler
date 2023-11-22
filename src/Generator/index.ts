@@ -131,7 +131,7 @@ class Generator {
                 const identifier = term.literal;
 
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const variable = identifier in this.variables ? null : this.variables[identifier]!;
+                const variable = identifier in this.variables ? this.variables[identifier]! : null;
 
                 if (variable === null) {
                     throw new UndeclaredIdentifierError(identifier);
