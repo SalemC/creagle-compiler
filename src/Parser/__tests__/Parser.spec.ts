@@ -3,7 +3,7 @@ import { InvalidIdentifierError } from '../errors/InvalidIdentifierError';
 import { InvalidTokenError } from '../errors/InvalidTokenError';
 import { Parser } from '..';
 
-describe('Parser', () => {
+describe('Parser feature', () => {
     it('should parse assignment of integer', () => {
         const parser = new Parser();
 
