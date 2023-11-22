@@ -4,12 +4,12 @@ describe('Lexer', () => {
     it('should lex assignment of integer', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens('const value = 420;');
+        const tokens = lexer.convertToTokens('byte value = 10;');
 
         expect(tokens).toEqual([
             {
-                type: 'const',
-                literal: 'const',
+                type: 'byte',
+                literal: 'byte',
                 location: {
                     column: 0,
                     row: 0,
@@ -19,7 +19,7 @@ describe('Lexer', () => {
                 type: 'identifier',
                 literal: 'value',
                 location: {
-                    column: 6,
+                    column: 5,
                     row: 0,
                 },
             },
@@ -27,15 +27,15 @@ describe('Lexer', () => {
                 type: 'equal',
                 literal: '=',
                 location: {
-                    column: 12,
+                    column: 11,
                     row: 0,
                 },
             },
             {
                 type: 'integer',
-                literal: '420',
+                literal: '10',
                 location: {
-                    column: 14,
+                    column: 13,
                     row: 0,
                 },
             },
@@ -43,7 +43,7 @@ describe('Lexer', () => {
                 type: 'semicolon',
                 literal: ';',
                 location: {
-                    column: 17,
+                    column: 15,
                     row: 0,
                 },
             },
@@ -51,7 +51,7 @@ describe('Lexer', () => {
                 type: 'eof',
                 literal: '\0',
                 location: {
-                    column: 19,
+                    column: 17,
                     row: 0,
                 },
             },
@@ -134,12 +134,12 @@ describe('Lexer', () => {
     it('should lex variable assignment of addition of 2 integers', () => {
         const lexer = new Lexer();
 
-        const tokens = lexer.convertToTokens('const x = 10 + 20;');
+        const tokens = lexer.convertToTokens('byte x = 10 + 20;');
 
         expect(tokens).toEqual([
             {
-                type: 'const',
-                literal: 'const',
+                type: 'byte',
+                literal: 'byte',
                 location: {
                     column: 0,
                     row: 0,
@@ -149,7 +149,7 @@ describe('Lexer', () => {
                 type: 'identifier',
                 literal: 'x',
                 location: {
-                    column: 6,
+                    column: 5,
                     row: 0,
                 },
             },
@@ -157,7 +157,7 @@ describe('Lexer', () => {
                 type: 'equal',
                 literal: '=',
                 location: {
-                    column: 8,
+                    column: 7,
                     row: 0,
                 },
             },
@@ -165,7 +165,7 @@ describe('Lexer', () => {
                 type: 'integer',
                 literal: '10',
                 location: {
-                    column: 10,
+                    column: 9,
                     row: 0,
                 },
             },
@@ -173,7 +173,7 @@ describe('Lexer', () => {
                 type: 'plus',
                 literal: '+',
                 location: {
-                    column: 13,
+                    column: 12,
                     row: 0,
                 },
             },
@@ -181,7 +181,7 @@ describe('Lexer', () => {
                 type: 'integer',
                 literal: '20',
                 location: {
-                    column: 15,
+                    column: 14,
                     row: 0,
                 },
             },
@@ -189,7 +189,7 @@ describe('Lexer', () => {
                 type: 'semicolon',
                 literal: ';',
                 location: {
-                    column: 17,
+                    column: 16,
                     row: 0,
                 },
             },
@@ -197,7 +197,7 @@ describe('Lexer', () => {
                 type: 'eof',
                 literal: '\0',
                 location: {
-                    column: 19,
+                    column: 18,
                     row: 0,
                 },
             },
