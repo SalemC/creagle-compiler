@@ -1,5 +1,12 @@
+export const DATA_TYPES = {
+    byte: 'byte',
+    short: 'short',
+    integer: 'integer',
+    long: 'long',
+} as const;
+
 export const KEYWORDS = {
-    const: 'const',
+    ...DATA_TYPES,
     let: 'let',
     return: 'return',
     true: 'true',

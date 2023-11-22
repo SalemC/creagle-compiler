@@ -11,11 +11,10 @@ const generator = new Generator();
 
 console.info('Lexing...');
 const tokens = lexer.convertToTokens(`
-    const firstValue = 4 + 2;
-    const secondValue = 1 * 3;
-    const thirdValue = firstValue / secondValue;
+    short valueOne = 257;
+    byte valueThree = valueOne + 1;
 
-    terminate(thirdValue);
+    terminate(valueThree);
 `);
 console.log(tokens);
 

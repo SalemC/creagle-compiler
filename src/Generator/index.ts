@@ -2,14 +2,16 @@ import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationEr
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { type TVariableList, type TRegister } from './types';
 import {
+    type TDataType,
     type INodeExpressionTerm,
     type TNodeExpression,
     type TNodeStatement,
+    type TNodeBinaryExpression,
 } from '../Parser/types';
 
 class Generator {
     private readonly variables: TVariableList = {};
-    private itemsOnStack: number = 0;
+    private stackSizeBytes: number = 0;
     private assembly: string = '';
 
     public generateAssembly(statements: readonly TNodeStatement[]): string {
@@ -24,35 +26,35 @@ class Generator {
         // Add an initial syscall to ensure the program always exits.
         this.move('rax', '60');
         this.move('rdi', '0');
-        this.appendAssemblyLine('syscall');
+        this.emit('syscall');
 
         return this.assembly;
     }
 
     private generateAssemblyForStatement(statement: TNodeStatement): void {
         switch (statement.type) {
-            case 'const': {
+            case 'variable': {
                 const identifier = statement.identifier.literal;
 
                 if (identifier in this.variables) {
                     throw new IdentifierRedeclarationError(identifier);
                 }
 
-                this.variables[identifier] = {
-                    stackLocationIndex: this.itemsOnStack,
-                };
+                this.generateExpression(statement.dataType, statement.expression);
 
-                this.generateExpression(statement.expression);
+                this.variables[identifier] = {
+                    stackLocation: this.stackSizeBytes,
+                };
 
                 break;
             }
 
             case 'terminate': {
-                this.generateExpression(statement.expression);
+                this.generateExpression('byte', statement.expression);
 
                 this.move('rax', '60');
                 this.pop('rdi');
-                this.appendAssemblyLine('syscall');
+                this.emit('syscall');
 
                 break;
             }
@@ -63,46 +65,50 @@ class Generator {
         }
     }
 
-    private generateExpression(expression: TNodeExpression): void {
+    private generateBinaryExpression(dataType: TDataType, expression: TNodeBinaryExpression): void {
+        this.generateExpression(dataType, expression.rhs);
+        this.generateExpression(dataType, expression.lhs);
+
+        this.pop('rax');
+        this.pop('rbx');
+
+        const firstRegister = this.getRegisterFromNativeTypeSpecifier(dataType, 'a');
+        const secondRegister = this.getRegisterFromNativeTypeSpecifier(dataType, 'b');
+
+        ({
+            binaryExpressionAdd: (): void => {
+                this.add(firstRegister, secondRegister);
+            },
+
+            binaryExpressionSubtract: (): void => {
+                this.subtract(firstRegister, secondRegister);
+            },
+
+            binaryExpressionMultiply: (): void => {
+                this.multiply(secondRegister);
+            },
+
+            binaryExpressionDivide: (): void => {
+                this.divide(secondRegister);
+            },
+        })[expression.type]();
+
+        this.push('rax');
+    }
+
+    private generateExpression(dataType: TDataType, expression: TNodeExpression): void {
         switch (expression.type) {
             case 'term': {
-                this.generateTerm(expression.term);
+                this.generateTerm(dataType, expression.term);
 
                 break;
             }
 
-            case 'binaryExpressionAdd': {
-                this.generateExpression(expression.rhs);
-                this.generateExpression(expression.lhs);
-
-                this.add('rax', 'rbx');
-
-                break;
-            }
-
-            case 'binaryExpressionSubtract': {
-                this.generateExpression(expression.rhs);
-                this.generateExpression(expression.lhs);
-
-                this.subtract('rax', 'rbx');
-
-                break;
-            }
-
-            case 'binaryExpressionMultiply': {
-                this.generateExpression(expression.rhs);
-                this.generateExpression(expression.lhs);
-
-                this.multiply('rbx');
-
-                break;
-            }
-
+            case 'binaryExpressionAdd':
+            case 'binaryExpressionSubtract':
+            case 'binaryExpressionMultiply':
             case 'binaryExpressionDivide': {
-                this.generateExpression(expression.rhs);
-                this.generateExpression(expression.lhs);
-
-                this.divide('rbx');
+                this.generateBinaryExpression(dataType, expression);
 
                 break;
             }
@@ -113,11 +119,10 @@ class Generator {
         }
     }
 
-    private generateTerm(term: INodeExpressionTerm['term']): void {
+    private generateTerm(dataType: TDataType, term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
-                this.move('rax', term.literal);
-                this.push('rax');
+                this.push(term.literal);
 
                 break;
             }
@@ -125,28 +130,35 @@ class Generator {
             case 'identifier': {
                 const identifier = term.literal;
 
-                if (!(identifier in this.variables)) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const variable = identifier in this.variables ? this.variables[identifier]! : null;
+
+                if (variable === null) {
                     throw new UndeclaredIdentifierError(identifier);
                 }
 
-                // We verified the presence of the identifier key above.
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const { stackLocationIndex } = this.variables[identifier]!;
+                const register = this.getRegisterFromNativeTypeSpecifier(dataType, 'a');
+
+                // If we're not using the entire register, we'll zero it out to remove
+                // unwanted remaining bits when we push it later on.
+                if (register !== 'rax') {
+                    this.xor('rax', 'rax');
+                }
 
                 // Calculate the memory location of an element in the stack,
                 // accounting for the fact that the top of the stack corresponds
                 // to the lowest memory address.
-                const stackMemoryOffset = (this.itemsOnStack - 1 - stackLocationIndex) * 0x08;
+                const stackMemoryOffset = this.stackSizeBytes - variable.stackLocation;
 
-                // Move the referenced value from wherever it is on the stack into rax.
-                this.move('rax', `[rsp + 0x${stackMemoryOffset.toString(16)}]`);
+                // Move the value into a register to let the register clamp it.
+                this.move(register, `[rsp + ${stackMemoryOffset.toString(10)}]`);
                 this.push('rax');
 
                 break;
             }
 
             case 'parenthesised': {
-                this.generateExpression(term.expression);
+                this.generateExpression(dataType, term.expression);
 
                 break;
             }
@@ -157,61 +169,55 @@ class Generator {
         }
     }
 
-    private push(sourceRegister: TRegister): void {
-        this.appendAssemblyLine(`push ${sourceRegister}`);
+    private getRegisterFromNativeTypeSpecifier(
+        dataType: TDataType,
+        register: 'a' | 'b' | 'c' | 'd',
+    ): TRegister {
+        return {
+            byte: { a: 'al', b: 'bl', c: 'cl', d: 'dl' }[register],
+            word: { a: 'ax', b: 'bx', c: 'cx', d: 'dx' }[register],
+            dword: { a: 'eax', b: 'ebx', c: 'ecx', d: 'edx' }[register],
+            qword: { a: 'rax', b: 'rbx', c: 'rcx', d: 'rdx' }[register],
+        }[dataType];
+    }
 
-        this.itemsOnStack += 1;
+    private push(sourceRegister: TRegister): void {
+        this.emit(`push ${sourceRegister}`);
+
+        this.stackSizeBytes += 8;
     }
 
     private pop(destinationRegister: TRegister): void {
-        this.appendAssemblyLine(`pop ${destinationRegister}`);
+        this.emit(`pop ${destinationRegister}`);
 
-        this.itemsOnStack -= 1;
+        this.stackSizeBytes -= 8;
+    }
+
+    private xor(firstRegister: TRegister, secondRegister: TRegister): void {
+        this.emit(`xor ${firstRegister}, ${secondRegister}`);
     }
 
     private move(destinationRegister: TRegister, value: string): void {
-        this.appendAssemblyLine(`mov ${destinationRegister}, ${value}`);
+        this.emit(`mov ${destinationRegister}, ${value}`);
     }
 
     private add(lhsRegister: TRegister, rhsRegister: TRegister): void {
-        this.pop(lhsRegister);
-        this.pop(rhsRegister);
-
-        this.appendAssemblyLine(`add ${lhsRegister}, ${rhsRegister}`);
-
-        this.push(lhsRegister);
+        this.emit(`add ${lhsRegister}, ${rhsRegister}`);
     }
 
     private subtract(lhsRegister: TRegister, rhsRegister: TRegister): void {
-        this.pop(lhsRegister);
-        this.pop(rhsRegister);
-
-        this.appendAssemblyLine(`sub ${lhsRegister}, ${rhsRegister}`);
-
-        this.push(lhsRegister);
+        this.emit(`sub ${lhsRegister}, ${rhsRegister}`);
     }
 
     private multiply(sourceRegister: TRegister): void {
-        // 'mul' always uses 'rax' as the left operand, then stores the result in 'rax'.
-        this.pop('rax');
-        this.pop(sourceRegister);
-
-        this.appendAssemblyLine(`mul ${sourceRegister}`);
-
-        this.push('rax');
+        this.emit(`mul ${sourceRegister}`);
     }
 
     private divide(sourceRegister: TRegister): void {
-        // 'div' always uses 'rax' as the left operand, then stores the result in 'rax'.
-        this.pop('rax');
-        this.pop(sourceRegister);
-
-        this.appendAssemblyLine(`div ${sourceRegister}`);
-
-        this.push('rax');
+        this.emit(`div ${sourceRegister}`);
     }
 
-    private appendAssemblyLine(text: string): void {
+    private emit(text: string): void {
         this.assembly += `    ${text}\n`;
     }
 
