@@ -11,10 +11,9 @@ const generator = new Generator();
 
 console.info('Lexing...');
 const tokens = lexer.convertToTokens(`
-    short valueOne = 257;
-    byte valueThree = valueOne + 1;
+    short value = 20;
 
-    terminate(valueThree);
+    terminate(value);
 `);
 console.log(tokens);
 
