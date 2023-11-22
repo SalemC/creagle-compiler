@@ -1,6 +1,6 @@
 import { Lexer } from '..';
 
-describe('Lexer', () => {
+describe('Lexer feature', () => {
     it('should lex assignment of integer', () => {
         const lexer = new Lexer();
 
