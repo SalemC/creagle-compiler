@@ -130,18 +130,12 @@ class Generator {
             case 'identifier': {
                 const identifier = term.literal;
 
-                if (!(identifier in this.variables)) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const variable = identifier in this.variables ? null : this.variables[identifier]!;
+
+                if (variable === null) {
                     throw new UndeclaredIdentifierError(identifier);
                 }
-
-                // We verified the presence of the identifier key above.
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const { stackLocation } = this.variables[identifier]!;
-
-                // Calculate the memory location of an element in the stack,
-                // accounting for the fact that the top of the stack corresponds
-                // to the lowest memory address.
-                const stackMemoryOffset = this.stackSizeBytes - stackLocation;
 
                 const register = this.getRegisterFromNativeTypeSpecifier(dataType, 'a');
 
@@ -150,6 +144,11 @@ class Generator {
                 if (register !== 'rax') {
                     this.xor('rax', 'rax');
                 }
+
+                // Calculate the memory location of an element in the stack,
+                // accounting for the fact that the top of the stack corresponds
+                // to the lowest memory address.
+                const stackMemoryOffset = this.stackSizeBytes - variable.stackLocation;
 
                 // Move the value into a register to let the register clamp it.
                 this.move(register, `[rsp + ${stackMemoryOffset.toString(10)}]`);
