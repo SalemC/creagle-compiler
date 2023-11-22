@@ -84,12 +84,10 @@ class Generator {
                 this.subtract(firstRegister, secondRegister);
             },
 
-            // 'mul' always uses 'rax' as the left operand, storing the result in 'rax'.
             binaryExpressionMultiply: (): void => {
                 this.multiply(secondRegister);
             },
 
-            // 'div' always uses 'rax' as the left operand, storing the result in 'rax'.
             binaryExpressionDivide: (): void => {
                 this.divide(secondRegister);
             },
