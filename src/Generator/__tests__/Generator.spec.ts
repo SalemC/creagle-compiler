@@ -9,8 +9,14 @@ describe('Generator unit', () => {
 
         expect(getAssembly(generator)).not.toContain('push rax');
 
+        // @ts-expect-error private property.
+        expect(generator.stackSizeBytes).toEqual(0);
+
         // @ts-expect-error private method.
         generator.push('rax');
+
+        // @ts-expect-error private property.
+        expect(generator.stackSizeBytes).toEqual(8);
 
         const assembly = getAssembly(generator).split('\n');
 
@@ -22,8 +28,14 @@ describe('Generator unit', () => {
 
         expect(getAssembly(generator)).not.toContain('pop rax');
 
+        // @ts-expect-error private property.
+        generator.stackSizeBytes = 8;
+
         // @ts-expect-error private method.
         generator.pop('rax');
+
+        // @ts-expect-error private property.
+        expect(generator.stackSizeBytes).toEqual(0);
 
         const assembly = getAssembly(generator).split('\n');
 
@@ -53,8 +65,7 @@ describe('Generator unit', () => {
 
         const assembly = getAssembly(generator).split('\n');
 
-        expect(assembly.at(-3)).toEqual('    add rax, rbx');
-        expect(assembly.at(-2)).toEqual('    push rax');
+        expect(assembly.at(0)).toEqual('    add rax, rbx');
     });
 
     it('should append a subtract assembly line to the underlying assembly', () => {
@@ -67,8 +78,7 @@ describe('Generator unit', () => {
 
         const assembly = getAssembly(generator).split('\n');
 
-        expect(assembly.at(-3)).toEqual('    sub rax, rbx');
-        expect(assembly.at(-2)).toEqual('    push rax');
+        expect(assembly.at(0)).toEqual('    sub rax, rbx');
     });
 
     it('should append a multiply assembly line to the underlying assembly', () => {
@@ -81,8 +91,7 @@ describe('Generator unit', () => {
 
         const assembly = getAssembly(generator).split('\n');
 
-        expect(assembly.at(-3)).toEqual('    mul rbx');
-        expect(assembly.at(-2)).toEqual('    push rax');
+        expect(assembly.at(0)).toEqual('    mul rbx');
     });
 
     it('should append a divide assembly line to the underlying assembly', () => {
@@ -95,8 +104,7 @@ describe('Generator unit', () => {
 
         const assembly = getAssembly(generator).split('\n');
 
-        expect(assembly.at(-3)).toEqual('    div rbx');
-        expect(assembly.at(-2)).toEqual('    push rax');
+        expect(assembly.at(0)).toEqual('    div rbx');
     });
 
     it('should append an indented assembly line to the underlying assembly', () => {
@@ -105,7 +113,7 @@ describe('Generator unit', () => {
         expect(getAssembly(generator)).not.toContain('add rax, rbx');
 
         // @ts-expect-error private method.
-        generator.appendAssemblyLine('add rax, rbx');
+        generator.emit('add rax, rbx');
 
         const assembly = getAssembly(generator).split('\n');
 
@@ -142,13 +150,14 @@ describe('Generator unit', () => {
     });
 });
 
-describe('Generator unit', () => {
+describe('Generator feature', () => {
     it('should generate assembly with addition expression', () => {
         const generator = new Generator();
 
         const assembly = generator.generateAssembly([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
@@ -165,13 +174,11 @@ describe('Generator unit', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    mov rax, 2\n' +
-            '    push rax\n' +
-            '    mov rax, 8\n' +
-            '    push rax\n' +
+            '    push 2\n' +
+            '    push 8\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
-            '    add rax, rbx\n' +
+            '    add al, bl\n' +
             '    push rax\n' +
             '    mov rax, 60\n' +
             '    mov rdi, 0\n' +
@@ -185,7 +192,8 @@ describe('Generator unit', () => {
 
         const assembly = generator.generateAssembly([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
@@ -202,13 +210,11 @@ describe('Generator unit', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    mov rax, 2\n' +
-            '    push rax\n' +
-            '    mov rax, 8\n' +
-            '    push rax\n' +
+            '    push 2\n' +
+            '    push 8\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
-            '    sub rax, rbx\n' +
+            '    sub al, bl\n' +
             '    push rax\n' +
             '    mov rax, 60\n' +
             '    mov rdi, 0\n' +
@@ -222,7 +228,8 @@ describe('Generator unit', () => {
 
         const assembly = generator.generateAssembly([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
@@ -239,13 +246,11 @@ describe('Generator unit', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    mov rax, 2\n' +
-            '    push rax\n' +
-            '    mov rax, 8\n' +
-            '    push rax\n' +
+            '    push 2\n' +
+            '    push 8\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
-            '    mul rbx\n' +
+            '    mul bl\n' +
             '    push rax\n' +
             '    mov rax, 60\n' +
             '    mov rdi, 0\n' +
@@ -259,7 +264,8 @@ describe('Generator unit', () => {
 
         const assembly = generator.generateAssembly([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
@@ -276,13 +282,11 @@ describe('Generator unit', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    mov rax, 2\n' +
-            '    push rax\n' +
-            '    mov rax, 8\n' +
-            '    push rax\n' +
+            '    push 2\n' +
+            '    push 8\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
-            '    div rbx\n' +
+            '    div bl\n' +
             '    push rax\n' +
             '    mov rax, 60\n' +
             '    mov rdi, 0\n' +
@@ -296,7 +300,8 @@ describe('Generator unit', () => {
 
         const assembly = generator.generateAssembly([
             {
-                type: 'const',
+                type: 'variable',
+                dataType: 'byte',
                 identifier: {
                     type: 'identifier',
                     literal: 'value',
@@ -321,25 +326,21 @@ describe('Generator unit', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    mov rax, 3\n' +
-            '    push rax\n' +
-            '    mov rax, 1\n' +
-            '    push rax\n' +
-            '    mov rax, 2\n' +
+            '    push 3\n' +
+            '    push 1\n' +
+            '    push 2\n' +
+            '    pop rax\n' +
+            '    pop rbx\n' +
+            '    div bl\n' +
             '    push rax\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
-            '    div rbx\n' +
+            '    mul bl\n' +
             '    push rax\n' +
+            '    push 4\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
-            '    mul rbx\n' +
-            '    push rax\n' +
-            '    mov rax, 4\n' +
-            '    push rax\n' +
-            '    pop rax\n' +
-            '    pop rbx\n' +
-            '    add rax, rbx\n' +
+            '    add al, bl\n' +
             '    push rax\n' +
             '    mov rax, 60\n' +
             '    mov rdi, 0\n' +
