@@ -72,8 +72,8 @@ class Generator {
         this.pop('rax');
         this.pop('rbx');
 
-        const firstRegister = this.getRegisterFromNativeTypeSpecifier(dataType, 'a');
-        const secondRegister = this.getRegisterFromNativeTypeSpecifier(dataType, 'b');
+        const firstRegister = this.getRegisterFromDataType(dataType, 'a');
+        const secondRegister = this.getRegisterFromDataType(dataType, 'b');
 
         ({
             binaryExpressionAdd: (): void => {
@@ -137,11 +137,11 @@ class Generator {
                     throw new UndeclaredIdentifierError(identifier);
                 }
 
-                const register = this.getRegisterFromNativeTypeSpecifier(dataType, 'a');
+                const register = this.getRegisterFromDataType(dataType, 'a');
 
                 // If we're not using the entire register, we'll zero it out to remove
                 // unwanted remaining bits when we push it later on.
-                if (register !== 'rax') {
+                if (register !== this.getRegisterFromDataType('qword', 'a')) {
                     this.xor('rax', 'rax');
                 }
 
@@ -169,16 +169,16 @@ class Generator {
         }
     }
 
-    private getRegisterFromNativeTypeSpecifier(
+    private getRegisterFromDataType(
         dataType: TDataType,
         register: 'a' | 'b' | 'c' | 'd',
     ): TRegister {
         return {
-            byte: { a: 'al', b: 'bl', c: 'cl', d: 'dl' }[register],
-            word: { a: 'ax', b: 'bx', c: 'cx', d: 'dx' }[register],
-            dword: { a: 'eax', b: 'ebx', c: 'ecx', d: 'edx' }[register],
-            qword: { a: 'rax', b: 'rbx', c: 'rcx', d: 'rdx' }[register],
-        }[dataType];
+            byte: { a: 'al', b: 'bl', c: 'cl', d: 'dl' },
+            word: { a: 'ax', b: 'bx', c: 'cx', d: 'dx' },
+            dword: { a: 'eax', b: 'ebx', c: 'ecx', d: 'edx' },
+            qword: { a: 'rax', b: 'rbx', c: 'rcx', d: 'rdx' },
+        }[dataType][register];
     }
 
     private push(sourceRegister: TRegister): void {
