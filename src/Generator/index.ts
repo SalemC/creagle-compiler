@@ -55,7 +55,6 @@ class Generator {
             case 'variable': {
                 const identifier = statement.identifier.literal;
 
-                // If this variable already exists, it's attempting to be redeclared.
                 if (this.getVariable(identifier) !== null) {
                     throw new IdentifierRedeclarationError(identifier);
                 }
@@ -186,7 +185,7 @@ class Generator {
             return null;
         }
 
-        // Search through this and the parent scopes for the variable.
+        // Search through the current and the parent scopes for the variable.
         for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
             const scope = this.scopes.at(i) ?? null;
 
