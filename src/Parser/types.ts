@@ -63,9 +63,15 @@ interface INodeStatementVariable {
     expression: TNodeExpression;
 }
 
+interface INodeStatementVariableReassignment {
+    type: 'variable-reassignment';
+    expression: TNodeExpression;
+    identifier: IToken;
+}
+
 interface INodeStatementTerminate {
     type: 'terminate';
     expression: TNodeExpression;
 }
 
-export type TNodeStatement = INodeStatementVariable | INodeStatementTerminate;
+export type TNodeStatement = INodeStatementVariable | INodeStatementVariableReassignment | INodeStatementTerminate;

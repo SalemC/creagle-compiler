@@ -75,6 +75,32 @@ class Parser {
                 break;
             }
 
+            case TOKEN_TYPES.identifier: {
+                this.consumeToken();
+
+                if (this.peek()?.type !== TOKEN_TYPES.equal) {
+                    throw new InvalidTokenError('=');
+                }
+
+                this.consumeToken();
+
+                const expression = this.parseExpression();
+
+                if (this.peek()?.type !== TOKEN_TYPES.semicolon) {
+                    throw new InvalidTokenError(';');
+                }
+
+                this.consumeToken();
+
+                this.statements.push({
+                    type: 'variable-reassignment',
+                    identifier: token,
+                    expression,
+                });
+
+                break;
+            }
+
             case TOKEN_TYPES.terminate: {
                 this.consumeToken();
 

@@ -17,7 +17,7 @@ class Generator {
     public generateAssembly(statements: readonly TNodeStatement[]): string {
         this.reset();
 
-        // We don't use the appendAssemblyLine method here because these assembly lines should not be indented.
+        // We don't use the emit method here because these assembly lines should not be indented.
         this.assembly += 'global _start\n\n';
         this.assembly += '_start:\n';
 
@@ -44,7 +44,38 @@ class Generator {
 
                 this.variables[identifier] = {
                     stackLocation: this.stackSizeBytes,
+                    dataType: statement.dataType,
                 };
+
+                break;
+            }
+
+            case 'variable-reassignment': {
+                const identifier = statement.identifier.literal;
+
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const variable = identifier in this.variables ? this.variables[identifier]! : null;
+
+                if (variable === null) {
+                    throw new UndeclaredIdentifierError(identifier);
+                }
+
+                this.generateExpression(variable.dataType, statement.expression);
+
+                const variableStackLocation = this.getStackPointerOffset(
+                    this.stackSizeBytes - variable.stackLocation,
+                );
+
+                const registerSubset = this.getRegisterFromDataType(variable.dataType, 'a');
+                const fullRegister = this.getRegisterFromDataType('qword', 'a');
+
+                // If we're not using the entire register, we'll zero it out to remove previously written bits.
+                if (registerSubset !== fullRegister) {
+                    this.xor(fullRegister, fullRegister);
+                }
+
+                this.move(registerSubset, '[rsp]');
+                this.move(variableStackLocation, fullRegister);
 
                 break;
             }
@@ -69,8 +100,8 @@ class Generator {
         this.generateExpression(dataType, expression.rhs);
         this.generateExpression(dataType, expression.lhs);
 
-        this.pop('rax');
-        this.pop('rbx');
+        this.pop(this.getRegisterFromDataType('qword', 'a'));
+        this.pop(this.getRegisterFromDataType('qword', 'b'));
 
         const firstRegister = this.getRegisterFromDataType(dataType, 'a');
         const secondRegister = this.getRegisterFromDataType(dataType, 'b');
@@ -93,7 +124,7 @@ class Generator {
             },
         })[expression.type]();
 
-        this.push('rax');
+        this.push(this.getRegisterFromDataType('qword', 'a'));
     }
 
     private generateExpression(dataType: TDataType, expression: TNodeExpression): void {
@@ -122,7 +153,17 @@ class Generator {
     private generateTerm(dataType: TDataType, term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
-                this.push(term.literal);
+                const registerSubset = this.getRegisterFromDataType(dataType, 'a');
+                const fullRegister = this.getRegisterFromDataType('qword', 'a');
+
+                // If we're not using the entire register, we'll zero it out to remove previously written bits.
+                if (registerSubset !== fullRegister) {
+                    this.xor(fullRegister, fullRegister);
+                }
+
+                // Move the literal into a register to clamp its value.
+                this.move(registerSubset, term.literal);
+                this.push(fullRegister);
 
                 break;
             }
@@ -137,22 +178,21 @@ class Generator {
                     throw new UndeclaredIdentifierError(identifier);
                 }
 
-                const register = this.getRegisterFromDataType(dataType, 'a');
+                const registerSubset = this.getRegisterFromDataType(dataType, 'a');
+                const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
-                // If we're not using the entire register, we'll zero it out to remove
-                // unwanted remaining bits when we push it later on.
-                if (register !== this.getRegisterFromDataType('qword', 'a')) {
-                    this.xor('rax', 'rax');
+                // If we're not using the entire register, we'll zero it out to remove previously written bits.
+                if (registerSubset !== fullRegister) {
+                    this.xor(fullRegister, fullRegister);
                 }
 
-                // Calculate the memory location of an element in the stack,
-                // accounting for the fact that the top of the stack corresponds
-                // to the lowest memory address.
-                const stackMemoryOffset = this.stackSizeBytes - variable.stackLocation;
+                const variableStackLocation = this.getStackPointerOffset(
+                    this.stackSizeBytes - variable.stackLocation,
+                );
 
                 // Move the value into a register to let the register clamp it.
-                this.move(register, `[rsp + ${stackMemoryOffset.toString(10)}]`);
-                this.push('rax');
+                this.move(registerSubset, variableStackLocation);
+                this.push(fullRegister);
 
                 break;
             }
@@ -179,6 +219,10 @@ class Generator {
             dword: { a: 'eax', b: 'ebx', c: 'ecx', d: 'edx' },
             qword: { a: 'rax', b: 'rbx', c: 'rcx', d: 'rdx' },
         }[dataType][register];
+    }
+
+    private getStackPointerOffset(offset: number): string {
+        return offset === 0 ? '[rsp]' : `[rsp + ${offset.toString(10)}]`;
     }
 
     private push(sourceRegister: TRegister): void {
