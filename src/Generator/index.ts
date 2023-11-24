@@ -275,7 +275,6 @@ class Generator {
         this.emit(`push ${sourceRegister}`);
 
         this.getCurrentScope().sizeBytes += 8;
-
         this.stackSizeBytes += 8;
     }
 
@@ -283,7 +282,6 @@ class Generator {
         this.emit(`pop ${destinationRegister}`);
 
         this.getCurrentScope().sizeBytes -= 8;
-
         this.stackSizeBytes -= 8;
     }
 
