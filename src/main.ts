@@ -11,10 +11,13 @@ const generator = new Generator();
 
 console.info('Lexing...');
 const tokens = lexer.convertToTokens(`
-    byte value = 255;
-    byte valueTwo = 2;
+    mutable byte value = 255;
 
-    value = valueTwo + value;
+    {
+        value = 2;
+
+        byte valueTwo = 5;
+    }
 
     terminate(value);
 `);

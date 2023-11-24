@@ -1,13 +1,15 @@
 import { type TDataType } from '../Parser/types';
 
-export type TVariableList = Record<
-    string,
-    {
-        stackLocation: number;
-        dataType: TDataType;
-        mutable: boolean;
-    }
->;
+export interface IVariable {
+    stackLocation: number;
+    dataType: TDataType;
+    mutable: boolean;
+}
+
+export interface IScope {
+    sizeBytes: number;
+    variables: Record<string, IVariable>;
+}
 
 export type TRegister =
     | 'rax'

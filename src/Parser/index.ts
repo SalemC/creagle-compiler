@@ -1,8 +1,8 @@
 import { UnhandledBinaryExpressionOperatorError } from './errors/UnhandledBinaryExpressionOperatorError';
+import { type TTokenType, type IToken, type TDataTypeSpecifier } from '../Lexer/types';
 import { InvalidExpressionError } from './errors/InvalidExpressionError';
 import { InvalidIdentifierError } from './errors/InvalidIdentifierError';
 import { InvalidTokenError } from './errors/InvalidTokenError';
-import { type TTokenType, type IToken, type TDataTypeSpecifier } from '../Lexer/types';
 import { DATA_TYPES, TOKEN_TYPES } from '../Lexer/tokenTypes';
 import {
     type TNodeBinaryExpression,
@@ -10,6 +10,10 @@ import {
     type TNodeExpression,
     type TNodeStatement,
     type TDataType,
+    type INodeStatementVariable,
+    type INodeStatementVariableReassignment,
+    type INodeStatementTerminate,
+    type INodeStatementScope,
 } from './types';
 
 class Parser {
@@ -23,24 +27,57 @@ class Parser {
         // Copy all the original tokens into our list of tokens to avoid modifying the original array.
         this.tokens.push(...tokens);
 
-        return this.parseStatements();
+        while (true) {
+            const statement = this.parseStatement();
+
+            // The statement will be null when there's nothing left to parse.
+            if (statement === null) {
+                break;
+            }
+
+            this.statements.push(statement);
+        }
+
+        return this.statements;
     }
 
-    private parseStatements(): TNodeStatement[] {
+    private parseStatement(): TNodeStatement | null {
         const token = this.peek();
 
         // The token is null when there's no more tokens to parse.
+        // This should never occur because there should always be an EOF token.
         if (token === null) {
-            return this.statements;
+            return null;
         }
 
         if (this.isTokenOfDataType(token.type)) {
-            this.parseVariable(token.type, false);
-
-            return this.parseStatements();
+            return this.parseVariable(token.type, false);
         }
 
         switch (token.type) {
+            case TOKEN_TYPES.openCurlyBrace: {
+                this.consumeToken();
+
+                const statements: INodeStatementScope['statements'] = [];
+
+                while (true) {
+                    const statement = this.parseStatement();
+
+                    // If there aren't any statements left to parse, the scope can't have been closed.
+                    if (statement === null) {
+                        throw new InvalidTokenError('}');
+                    }
+
+                    statements.push(statement);
+
+                    if (this.peek()?.type === TOKEN_TYPES.closeCurlyBrace) {
+                        this.consumeToken();
+
+                        return { type: 'scope', statements } satisfies INodeStatementScope;
+                    }
+                }
+            }
+
             case TOKEN_TYPES.mutable: {
                 this.consumeToken();
 
@@ -50,9 +87,7 @@ class Parser {
                     throw new InvalidTokenError();
                 }
 
-                this.parseVariable(dataType, true);
-
-                break;
+                return this.parseVariable(dataType, true);
             }
 
             case TOKEN_TYPES.identifier: {
@@ -72,13 +107,11 @@ class Parser {
 
                 this.consumeToken();
 
-                this.statements.push({
+                return {
                     type: 'variable-reassignment',
                     identifier: token,
                     expression,
-                });
-
-                break;
+                } satisfies INodeStatementVariableReassignment;
             }
 
             case TOKEN_TYPES.terminate: {
@@ -104,26 +137,25 @@ class Parser {
 
                 this.consumeToken();
 
-                this.statements.push({ type: 'terminate', expression });
-
-                break;
+                return { type: 'terminate', expression } satisfies INodeStatementTerminate;
             }
 
             case TOKEN_TYPES.eof: {
                 this.consumeToken();
 
-                break;
+                return null;
             }
 
             default: {
                 throw new InvalidTokenError();
             }
         }
-
-        return this.parseStatements();
     }
 
-    private parseVariable(dataTypeSpecifier: TDataTypeSpecifier, mutable: boolean): void {
+    private parseVariable(
+        dataTypeSpecifier: TDataTypeSpecifier,
+        mutable: boolean,
+    ): INodeStatementVariable {
         this.consumeToken();
 
         const identifier = this.peek();
@@ -148,13 +180,13 @@ class Parser {
 
         this.consumeToken();
 
-        this.statements.push({
+        return {
             type: 'variable',
             dataType: this.convertDataTypeSpecifierToDataType(dataTypeSpecifier),
             identifier,
             expression,
             mutable,
-        });
+        } satisfies INodeStatementVariable;
     }
 
     private parseExpression(minimumPrecedence: number = 0): TNodeExpression {
