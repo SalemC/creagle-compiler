@@ -54,7 +54,7 @@ export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 
 export type TDataType = 'byte' | 'word' | 'dword' | 'qword';
 
-interface INodeStatementVariable {
+export interface INodeStatementVariable {
     type: 'variable';
     dataType: TDataType;
     identifier: IToken;
@@ -62,18 +62,24 @@ interface INodeStatementVariable {
     mutable: boolean;
 }
 
-interface INodeStatementVariableReassignment {
+export interface INodeStatementVariableReassignment {
     type: 'variable-reassignment';
     expression: TNodeExpression;
     identifier: IToken;
 }
 
-interface INodeStatementTerminate {
+export interface INodeStatementTerminate {
     type: 'terminate';
     expression: TNodeExpression;
+}
+
+export interface INodeStatementScope {
+    type: 'scope';
+    statements: TNodeStatement[];
 }
 
 export type TNodeStatement =
     | INodeStatementVariable
     | INodeStatementVariableReassignment
-    | INodeStatementTerminate;
+    | INodeStatementTerminate
+    | INodeStatementScope;

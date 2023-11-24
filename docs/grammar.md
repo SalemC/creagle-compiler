@@ -6,6 +6,7 @@ $$
         \text{terminate}([\text{Expression}]); \\
         \text{?mutable} \space \text{[Type]} \space \text{identifier} = [\text{Expression}]; \\
         \text{identifier} = [\text{Expression}]; \\
+        \{\text{[Statement]}^*\} \\
     \end{cases} \\
     [\text{Type}] &\to
     \begin{cases}

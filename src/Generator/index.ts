@@ -1,7 +1,7 @@
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
 import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
-import { type TVariableList, type TRegister } from './types';
+import { type IVariable, type TRegister, type IScope } from './types';
 import {
     type TDataType,
     type INodeExpressionTerm,
@@ -11,7 +11,7 @@ import {
 } from '../Parser/types';
 
 class Generator {
-    private readonly variables: TVariableList = {};
+    private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {} }];
     private stackSizeBytes: number = 0;
     private assembly: string = '';
 
@@ -34,16 +34,35 @@ class Generator {
 
     private generateAssemblyForStatement(statement: TNodeStatement): void {
         switch (statement.type) {
+            case 'scope': {
+                this.scopes.push({ sizeBytes: 0, variables: {} });
+
+                statement.statements.forEach(this.generateAssemblyForStatement.bind(this));
+
+                const { sizeBytes } = this.getCurrentScope();
+
+                // Move the stack pointer back to where it was.
+                this.add('rsp', sizeBytes.toString(10));
+
+                this.stackSizeBytes -= sizeBytes;
+
+                // Remove the scope along with all its variables.
+                this.scopes.splice(-1, 1);
+
+                break;
+            }
+
             case 'variable': {
                 const identifier = statement.identifier.literal;
 
-                if (identifier in this.variables) {
+                // If this variable already exists, it's attempting to be redeclared.
+                if (this.getVariable(identifier) !== null) {
                     throw new IdentifierRedeclarationError(identifier);
                 }
 
                 this.generateExpression(statement.dataType, statement.expression);
 
-                this.variables[identifier] = {
+                this.getCurrentScope().variables[identifier] = {
                     stackLocation: this.stackSizeBytes,
                     dataType: statement.dataType,
                     mutable: statement.mutable,
@@ -55,8 +74,7 @@ class Generator {
             case 'variable-reassignment': {
                 const identifier = statement.identifier.literal;
 
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const variable = identifier in this.variables ? this.variables[identifier]! : null;
+                const variable = this.getVariable(identifier);
 
                 if (variable === null) {
                     throw new UndeclaredIdentifierError(identifier);
@@ -113,21 +131,10 @@ class Generator {
         const secondRegister = this.getRegisterFromDataType(dataType, 'b');
 
         ({
-            binaryExpressionAdd: (): void => {
-                this.add(firstRegister, secondRegister);
-            },
-
-            binaryExpressionSubtract: (): void => {
-                this.subtract(firstRegister, secondRegister);
-            },
-
-            binaryExpressionMultiply: (): void => {
-                this.multiply(secondRegister);
-            },
-
-            binaryExpressionDivide: (): void => {
-                this.divide(secondRegister);
-            },
+            binaryExpressionAdd: (): void => this.add(firstRegister, secondRegister),
+            binaryExpressionSubtract: (): void => this.subtract(firstRegister, secondRegister),
+            binaryExpressionMultiply: (): void => this.multiply(secondRegister),
+            binaryExpressionDivide: (): void => this.divide(secondRegister),
         })[expression.type]();
 
         this.push(this.getRegisterFromDataType('qword', 'a'));
@@ -156,6 +163,41 @@ class Generator {
         }
     }
 
+    private getCurrentScope(): IScope {
+        const currentScope = this.scopes.at(-1) ?? null;
+
+        if (currentScope !== null) {
+            return currentScope;
+        }
+
+        // If there isn't already a scope, create a new one and return it.
+        const newScope: IScope = {
+            sizeBytes: 0,
+            variables: {},
+        };
+
+        this.scopes.push(newScope);
+
+        return newScope;
+    }
+
+    private getVariable(identifier: string): IVariable | null {
+        if (this.scopes.length === 0) {
+            return null;
+        }
+
+        // Search through this and the parent scopes for the variable.
+        for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
+            const scope = this.scopes.at(i) ?? null;
+
+            if (scope !== null && identifier in scope.variables) {
+                return scope.variables[identifier] ?? null;
+            }
+        }
+
+        return null;
+    }
+
     private generateTerm(dataType: TDataType, term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
@@ -177,8 +219,7 @@ class Generator {
             case 'identifier': {
                 const identifier = term.literal;
 
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const variable = identifier in this.variables ? this.variables[identifier]! : null;
+                const variable = this.getVariable(identifier);
 
                 if (variable === null) {
                     throw new UndeclaredIdentifierError(identifier);
@@ -234,11 +275,15 @@ class Generator {
     private push(sourceRegister: TRegister): void {
         this.emit(`push ${sourceRegister}`);
 
+        this.getCurrentScope().sizeBytes += 8;
+
         this.stackSizeBytes += 8;
     }
 
     private pop(destinationRegister: TRegister): void {
         this.emit(`pop ${destinationRegister}`);
+
+        this.getCurrentScope().sizeBytes -= 8;
 
         this.stackSizeBytes -= 8;
     }
