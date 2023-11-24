@@ -175,8 +175,12 @@ describe('Generator feature', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    push 2\n' +
-            '    push 8\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 2\n' +
+            '    push rax\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 8\n' +
+            '    push rax\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
             '    add al, bl\n' +
@@ -212,8 +216,12 @@ describe('Generator feature', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    push 2\n' +
-            '    push 8\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 2\n' +
+            '    push rax\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 8\n' +
+            '    push rax\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
             '    sub al, bl\n' +
@@ -249,8 +257,12 @@ describe('Generator feature', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    push 2\n' +
-            '    push 8\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 2\n' +
+            '    push rax\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 8\n' +
+            '    push rax\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
             '    mul bl\n' +
@@ -286,8 +298,12 @@ describe('Generator feature', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    push 2\n' +
-            '    push 8\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 2\n' +
+            '    push rax\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 8\n' +
+            '    push rax\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
             '    div bl\n' +
@@ -331,9 +347,15 @@ describe('Generator feature', () => {
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    push 3\n' +
-            '    push 1\n' +
-            '    push 2\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 3\n' +
+            '    push rax\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 1\n' +
+            '    push rax\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 2\n' +
+            '    push rax\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
             '    div bl\n' +
@@ -342,7 +364,9 @@ describe('Generator feature', () => {
             '    pop rbx\n' +
             '    mul bl\n' +
             '    push rax\n' +
-            '    push 4\n' +
+            '    xor rax, rax\n' +
+            '    mov al, 4\n' +
+            '    push rax\n' +
             '    pop rax\n' +
             '    pop rbx\n' +
             '    add al, bl\n' +
