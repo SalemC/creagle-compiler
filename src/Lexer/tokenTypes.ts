@@ -7,6 +7,7 @@ export const DATA_TYPES = {
 
 export const KEYWORDS = {
     ...DATA_TYPES,
+    mutable: 'mutable',
     let: 'let',
     return: 'return',
     true: 'true',

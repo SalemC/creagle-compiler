@@ -168,6 +168,7 @@ describe('Generator feature', () => {
                     lhs: { type: 'term', term: { type: 'integer', literal: '8' } },
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
+                mutable: true,
             },
         ]);
 
@@ -204,6 +205,7 @@ describe('Generator feature', () => {
                     lhs: { type: 'term', term: { type: 'integer', literal: '8' } },
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
+                mutable: true,
             },
         ]);
 
@@ -240,6 +242,7 @@ describe('Generator feature', () => {
                     lhs: { type: 'term', term: { type: 'integer', literal: '8' } },
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
+                mutable: true,
             },
         ]);
 
@@ -276,6 +279,7 @@ describe('Generator feature', () => {
                     lhs: { type: 'term', term: { type: 'integer', literal: '8' } },
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
+                mutable: true,
             },
         ]);
 
@@ -320,6 +324,7 @@ describe('Generator feature', () => {
                         rhs: { type: 'term', term: { type: 'integer', literal: '3' } },
                     },
                 },
+                mutable: true,
             },
         ]);
 

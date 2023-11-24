@@ -4,7 +4,7 @@ $$
     [\text{Statement}] &\to
     \begin{cases}
         \text{terminate}([\text{Expression}]); \\
-        \text{[Type]} \space \text{identifier} = [\text{Expression}]; \\
+        \text{?mutable} \space \text{[Type]} \space \text{identifier} = [\text{Expression}]; \\
         \text{identifier} = [\text{Expression}]; \\
     \end{cases} \\
     [\text{Type}] &\to

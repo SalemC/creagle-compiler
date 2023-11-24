@@ -2,14 +2,13 @@ import { UnhandledBinaryExpressionOperatorError } from './errors/UnhandledBinary
 import { InvalidExpressionError } from './errors/InvalidExpressionError';
 import { InvalidIdentifierError } from './errors/InvalidIdentifierError';
 import { InvalidTokenError } from './errors/InvalidTokenError';
-import { type TTokenType, type IToken } from '../Lexer/types';
-import { TOKEN_TYPES } from '../Lexer/tokenTypes';
+import { type TTokenType, type IToken, type TDataTypeSpecifier } from '../Lexer/types';
+import { DATA_TYPES, TOKEN_TYPES } from '../Lexer/tokenTypes';
 import {
     type TNodeBinaryExpression,
     type INodeExpressionTerm,
     type TNodeExpression,
     type TNodeStatement,
-    type TDataTypeSpecifier,
     type TDataType,
 } from './types';
 
@@ -31,46 +30,27 @@ class Parser {
         const token = this.peek();
 
         // The token is null when there's no more tokens to parse.
-        // When that happens, we'll want to return all the parsed statements.
         if (token === null) {
             return this.statements;
         }
 
+        if (this.isTokenOfDataType(token.type)) {
+            this.parseVariable(token.type, false);
+
+            return this.parseStatements();
+        }
+
         switch (token.type) {
-            case TOKEN_TYPES.byte:
-            case TOKEN_TYPES.short:
-            case TOKEN_TYPES.integer:
-            case TOKEN_TYPES.long: {
+            case TOKEN_TYPES.mutable: {
                 this.consumeToken();
 
-                const identifier = this.peek();
+                const dataType = this.peek()?.type ?? null;
 
-                if (identifier?.type !== TOKEN_TYPES.identifier) {
-                    throw new InvalidIdentifierError();
+                if (dataType === null || !this.isTokenOfDataType(dataType)) {
+                    throw new InvalidTokenError();
                 }
 
-                this.consumeToken();
-
-                if (this.peek()?.type !== TOKEN_TYPES.equal) {
-                    throw new InvalidTokenError('=');
-                }
-
-                this.consumeToken();
-
-                const expression = this.parseExpression();
-
-                if (this.peek()?.type !== TOKEN_TYPES.semicolon) {
-                    throw new InvalidTokenError(';');
-                }
-
-                this.consumeToken();
-
-                this.statements.push({
-                    type: 'variable',
-                    dataType: this.convertDataTypeSpecifierToDataType(token.type),
-                    identifier,
-                    expression,
-                });
+                this.parseVariable(dataType, true);
 
                 break;
             }
@@ -141,6 +121,40 @@ class Parser {
         }
 
         return this.parseStatements();
+    }
+
+    private parseVariable(dataTypeSpecifier: TDataTypeSpecifier, mutable: boolean): void {
+        this.consumeToken();
+
+        const identifier = this.peek();
+
+        if (identifier?.type !== TOKEN_TYPES.identifier) {
+            throw new InvalidIdentifierError();
+        }
+
+        this.consumeToken();
+
+        if (this.peek()?.type !== TOKEN_TYPES.equal) {
+            throw new InvalidTokenError('=');
+        }
+
+        this.consumeToken();
+
+        const expression = this.parseExpression();
+
+        if (this.peek()?.type !== TOKEN_TYPES.semicolon) {
+            throw new InvalidTokenError(';');
+        }
+
+        this.consumeToken();
+
+        this.statements.push({
+            type: 'variable',
+            dataType: this.convertDataTypeSpecifierToDataType(dataTypeSpecifier),
+            identifier,
+            expression,
+            mutable,
+        });
     }
 
     private parseExpression(minimumPrecedence: number = 0): TNodeExpression {
@@ -282,6 +296,10 @@ class Parser {
                 long: 'qword',
             } satisfies Record<TDataTypeSpecifier, TDataType>
         )[dataTypeSpecifier];
+    }
+
+    private isTokenOfDataType(tokenType: TTokenType): tokenType is TDataTypeSpecifier {
+        return tokenType in DATA_TYPES;
     }
 
     private consumeToken(): void {

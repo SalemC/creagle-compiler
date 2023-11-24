@@ -1,4 +1,3 @@
-import { type DATA_TYPES } from '../Lexer/tokenTypes';
 import { type IToken } from '../Lexer/types';
 
 interface INodeExpressionTermIdentifier {
@@ -53,7 +52,6 @@ export type TNodeBinaryExpression =
 
 export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 
-export type TDataTypeSpecifier = (typeof DATA_TYPES)[keyof typeof DATA_TYPES];
 export type TDataType = 'byte' | 'word' | 'dword' | 'qword';
 
 interface INodeStatementVariable {
@@ -61,6 +59,7 @@ interface INodeStatementVariable {
     dataType: TDataType;
     identifier: IToken;
     expression: TNodeExpression;
+    mutable: boolean;
 }
 
 interface INodeStatementVariableReassignment {
@@ -74,4 +73,7 @@ interface INodeStatementTerminate {
     expression: TNodeExpression;
 }
 
-export type TNodeStatement = INodeStatementVariable | INodeStatementVariableReassignment | INodeStatementTerminate;
+export type TNodeStatement =
+    | INodeStatementVariable
+    | INodeStatementVariableReassignment
+    | INodeStatementTerminate;

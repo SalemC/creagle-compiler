@@ -1,4 +1,5 @@
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
+import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { type TVariableList, type TRegister } from './types';
 import {
@@ -45,6 +46,7 @@ class Generator {
                 this.variables[identifier] = {
                     stackLocation: this.stackSizeBytes,
                     dataType: statement.dataType,
+                    mutable: statement.mutable,
                 };
 
                 break;
@@ -58,6 +60,10 @@ class Generator {
 
                 if (variable === null) {
                     throw new UndeclaredIdentifierError(identifier);
+                }
+
+                if (!variable.mutable) {
+                    throw new ConstantReassignmentError(identifier);
                 }
 
                 this.generateExpression(variable.dataType, statement.expression);
