@@ -41,7 +41,7 @@ class Generator {
 
                 const { sizeBytes } = this.getCurrentScope();
 
-                // Move the stack pointer back to where it was.
+                // Move the stack pointer back to where it was before this scope was created.
                 this.add('rsp', sizeBytes.toString(10));
 
                 this.stackSizeBytes -= sizeBytes;
