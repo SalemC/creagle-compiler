@@ -1,7 +1,11 @@
+import { type TDataType } from '../Parser/types';
+
 export type TVariableList = Record<
     string,
     {
         stackLocation: number;
+        dataType: TDataType;
+        mutable: boolean;
     }
 >;
 

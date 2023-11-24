@@ -1,6 +1,6 @@
 class IdentifierRedeclarationError extends Error {
     constructor(identifier: string) {
-        super(`Unable to redeclare identifier: ${identifier}.`);
+        super(`Cannot redeclare variable '${identifier}'.`);
     }
 }
 

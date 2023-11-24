@@ -70,6 +70,7 @@ describe('Parser feature', () => {
                         row: 0,
                     },
                 },
+                mutable: false,
                 expression: {
                     type: 'term',
                     term: {
@@ -194,6 +195,7 @@ describe('Parser feature', () => {
                         literal: '420',
                     },
                 },
+                mutable: false,
             },
             {
                 type: 'variable',
@@ -213,6 +215,7 @@ describe('Parser feature', () => {
                         literal: 'value',
                     },
                 },
+                mutable: false,
             },
         ]);
     });
@@ -316,6 +319,7 @@ describe('Parser feature', () => {
                         },
                     },
                 },
+                mutable: false,
             },
         ]);
     });
@@ -419,6 +423,7 @@ describe('Parser feature', () => {
                         },
                     },
                 },
+                mutable: false,
             },
         ]);
     });
