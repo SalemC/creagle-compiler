@@ -186,7 +186,7 @@ class Parser {
             identifier,
             expression,
             mutable,
-        };
+        } satisfies INodeStatementVariable;
     }
 
     private parseExpression(minimumPrecedence: number = 0): TNodeExpression {
