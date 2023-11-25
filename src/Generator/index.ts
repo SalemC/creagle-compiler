@@ -140,7 +140,7 @@ class Generator {
         this.stackSizeBytes -= sizeBytes;
 
         // Remove the scope along with all its variables.
-        this.scopes.splice(-1, 1);
+        this.scopes.pop();
     }
 
     private generateBinaryExpression(dataType: TDataType, expression: TNodeBinaryExpression): void {
