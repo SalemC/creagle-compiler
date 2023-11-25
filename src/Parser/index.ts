@@ -13,7 +13,8 @@ import {
     type INodeStatementVariable,
     type INodeStatementVariableReassignment,
     type INodeStatementTerminate,
-    type INodeStatementScope,
+    type INodeScope,
+    type INodeStatementIf,
 } from './types';
 
 class Parser {
@@ -55,27 +56,36 @@ class Parser {
         }
 
         switch (token.type) {
+            case TOKEN_TYPES.if: {
+                this.consumeToken();
+
+                if (this.peek()?.type !== TOKEN_TYPES.openParenthesis) {
+                    throw new InvalidTokenError('(');
+                }
+
+                this.consumeToken();
+
+                const expression = this.parseExpression();
+
+                if (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
+                    throw new InvalidTokenError(')');
+                }
+
+                this.consumeToken();
+
+                const statement = this.parseStatement();
+
+                if (statement === null) {
+                    throw new InvalidTokenError();
+                }
+
+                return { type: 'if', expression, statement } satisfies INodeStatementIf;
+            }
+
             case TOKEN_TYPES.openCurlyBrace: {
                 this.consumeToken();
 
-                const statements: INodeStatementScope['statements'] = [];
-
-                while (true) {
-                    const statement = this.parseStatement();
-
-                    // If there aren't any statements left to parse, the scope can't have been closed.
-                    if (statement === null) {
-                        throw new InvalidTokenError('}');
-                    }
-
-                    statements.push(statement);
-
-                    if (this.peek()?.type === TOKEN_TYPES.closeCurlyBrace) {
-                        this.consumeToken();
-
-                        return { type: 'scope', statements } satisfies INodeStatementScope;
-                    }
-                }
+                return this.parseScope();
             }
 
             case TOKEN_TYPES.mutable: {
@@ -150,6 +160,25 @@ class Parser {
                 throw new InvalidTokenError();
             }
         }
+    }
+
+    private parseScope(): INodeScope {
+        const statements: INodeScope['statements'] = [];
+
+        while (this.peek() !== null && this.peek()?.type !== TOKEN_TYPES.closeCurlyBrace) {
+            const statement = this.parseStatement();
+
+            // If there aren't any statements left to parse, the scope can't have been closed.
+            if (statement === null) {
+                throw new InvalidTokenError('}');
+            }
+
+            statements.push(statement);
+        }
+
+        this.consumeToken();
+
+        return { type: 'scope', statements } satisfies INodeScope;
     }
 
     private parseVariable(

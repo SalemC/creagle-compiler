@@ -8,11 +8,13 @@ import {
     type TNodeExpression,
     type TNodeStatement,
     type TNodeBinaryExpression,
+    type INodeScope,
 } from '../Parser/types';
 
 class Generator {
     private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {} }];
     private stackSizeBytes: number = 0;
+    private labelCount: number = 0;
     private assembly: string = '';
 
     public generateAssembly(statements: readonly TNodeStatement[]): string {
@@ -22,7 +24,7 @@ class Generator {
         this.assembly += 'global _start\n\n';
         this.assembly += '_start:\n';
 
-        statements.forEach(this.generateAssemblyForStatement.bind(this));
+        statements.forEach(this.generateStatement.bind(this));
 
         // Add an initial syscall to ensure the program always exits.
         this.move('rax', '60');
@@ -32,26 +34,8 @@ class Generator {
         return this.assembly;
     }
 
-    private generateAssemblyForStatement(statement: TNodeStatement): void {
+    private generateStatement(statement: TNodeStatement): void {
         switch (statement.type) {
-            case 'scope': {
-                this.scopes.push({ sizeBytes: 0, variables: {} });
-
-                statement.statements.forEach(this.generateAssemblyForStatement.bind(this));
-
-                const { sizeBytes } = this.getCurrentScope();
-
-                // Move the stack pointer back to where it was before this scope was created.
-                this.add('rsp', sizeBytes.toString(10));
-
-                this.stackSizeBytes -= sizeBytes;
-
-                // Remove the scope along with all its variables.
-                this.scopes.splice(-1, 1);
-
-                break;
-            }
-
             case 'variable': {
                 const identifier = statement.identifier.literal;
 
@@ -103,6 +87,30 @@ class Generator {
                 break;
             }
 
+            case 'scope': {
+                this.generateScope(statement);
+
+                break;
+            }
+
+            case 'if': {
+                // We only check if the value is not zero, so a byte is sufficient storage.
+                this.generateExpression('byte', statement.expression);
+
+                const fullRegister = this.getRegisterFromDataType('qword', 'a');
+                const label = this.generateLabel('if');
+
+                this.pop(fullRegister);
+
+                this.compare(fullRegister, '0');
+                this.jumpWhenZero(label);
+                this.generateStatement(statement.statement);
+
+                this.emit(`\n${label}:`, false);
+
+                break;
+            }
+
             case 'terminate': {
                 this.generateExpression('byte', statement.expression);
 
@@ -117,6 +125,22 @@ class Generator {
                 return statement satisfies never;
             }
         }
+    }
+
+    private generateScope(scope: INodeScope): void {
+        this.scopes.push({ sizeBytes: 0, variables: {} });
+
+        scope.statements.forEach(this.generateStatement.bind(this));
+
+        const { sizeBytes } = this.getCurrentScope();
+
+        // Move the stack pointer back to where it was before this scope was created.
+        this.add('rsp', sizeBytes.toString(10));
+
+        this.stackSizeBytes -= sizeBytes;
+
+        // Remove the scope along with all its variables.
+        this.scopes.pop();
     }
 
     private generateBinaryExpression(dataType: TDataType, expression: TNodeBinaryExpression): void {
@@ -160,41 +184,6 @@ class Generator {
                 return expression satisfies never;
             }
         }
-    }
-
-    private getCurrentScope(): IScope {
-        const currentScope = this.scopes.at(-1) ?? null;
-
-        if (currentScope !== null) {
-            return currentScope;
-        }
-
-        // If there isn't already a scope, create a new one and return it.
-        const newScope: IScope = {
-            sizeBytes: 0,
-            variables: {},
-        };
-
-        this.scopes.push(newScope);
-
-        return newScope;
-    }
-
-    private getVariable(identifier: string): IVariable | null {
-        if (this.scopes.length === 0) {
-            return null;
-        }
-
-        // Search through the current and the parent scopes for the variable.
-        for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
-            const scope = this.scopes.at(i) ?? null;
-
-            if (scope !== null && identifier in scope.variables) {
-                return scope.variables[identifier] ?? null;
-            }
-        }
-
-        return null;
     }
 
     private generateTerm(dataType: TDataType, term: INodeExpressionTerm['term']): void {
@@ -255,6 +244,41 @@ class Generator {
         }
     }
 
+    private getCurrentScope(): IScope {
+        const currentScope = this.scopes.at(-1) ?? null;
+
+        if (currentScope !== null) {
+            return currentScope;
+        }
+
+        // If there isn't already a scope, create a new one and return it.
+        const newScope: IScope = {
+            sizeBytes: 0,
+            variables: {},
+        };
+
+        this.scopes.push(newScope);
+
+        return newScope;
+    }
+
+    private getVariable(identifier: string): IVariable | null {
+        if (this.scopes.length === 0) {
+            return null;
+        }
+
+        // Search through the current and the parent scopes for the variable.
+        for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
+            const scope = this.scopes.at(i) ?? null;
+
+            if (scope !== null && identifier in scope.variables) {
+                return scope.variables[identifier] ?? null;
+            }
+        }
+
+        return null;
+    }
+
     private getRegisterFromDataType(
         dataType: TDataType,
         register: 'a' | 'b' | 'c' | 'd',
@@ -265,6 +289,12 @@ class Generator {
             dword: { a: 'eax', b: 'ebx', c: 'ecx', d: 'edx' },
             qword: { a: 'rax', b: 'rbx', c: 'rcx', d: 'rdx' },
         }[dataType][register];
+    }
+
+    private generateLabel(prefix?: string): string {
+        const labelCount = (this.labelCount += 1);
+
+        return `${prefix === null ? '' : `${prefix}_`}label_${labelCount}`;
     }
 
     private getStackPointerOffset(offset: number): string {
@@ -285,32 +315,40 @@ class Generator {
         this.stackSizeBytes -= 8;
     }
 
-    private xor(firstRegister: TRegister, secondRegister: TRegister): void {
-        this.emit(`xor ${firstRegister}, ${secondRegister}`);
+    private jumpWhenZero(label: string): void {
+        this.emit(`jz ${label}`);
     }
 
-    private move(destinationRegister: TRegister, value: string): void {
-        this.emit(`mov ${destinationRegister}, ${value}`);
+    private compare(register: TRegister, value: TRegister): void {
+        this.emit(`cmp ${register}, ${value}`);
     }
 
-    private add(lhsRegister: TRegister, rhsRegister: TRegister): void {
-        this.emit(`add ${lhsRegister}, ${rhsRegister}`);
+    private xor(register: TRegister, value: TRegister): void {
+        this.emit(`xor ${register}, ${value}`);
     }
 
-    private subtract(lhsRegister: TRegister, rhsRegister: TRegister): void {
-        this.emit(`sub ${lhsRegister}, ${rhsRegister}`);
+    private move(register: TRegister, value: string): void {
+        this.emit(`mov ${register}, ${value}`);
     }
 
-    private multiply(sourceRegister: TRegister): void {
-        this.emit(`mul ${sourceRegister}`);
+    private add(register: TRegister, value: TRegister): void {
+        this.emit(`add ${register}, ${value}`);
     }
 
-    private divide(sourceRegister: TRegister): void {
-        this.emit(`div ${sourceRegister}`);
+    private subtract(register: TRegister, value: TRegister): void {
+        this.emit(`sub ${register}, ${value}`);
     }
 
-    private emit(text: string): void {
-        this.assembly += `    ${text}\n`;
+    private multiply(register: TRegister): void {
+        this.emit(`mul ${register}`);
+    }
+
+    private divide(register: TRegister): void {
+        this.emit(`div ${register}`);
+    }
+
+    private emit(text: string, indent: boolean = true): void {
+        this.assembly += `${indent ? '    ' : ''}${text}\n`;
     }
 
     private reset(): void {

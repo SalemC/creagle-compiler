@@ -73,13 +73,20 @@ export interface INodeStatementTerminate {
     expression: TNodeExpression;
 }
 
-export interface INodeStatementScope {
+export interface INodeScope {
     type: 'scope';
     statements: TNodeStatement[];
+}
+
+export interface INodeStatementIf {
+    type: 'if';
+    expression: TNodeExpression;
+    statement: TNodeStatement;
 }
 
 export type TNodeStatement =
     | INodeStatementVariable
     | INodeStatementVariableReassignment
     | INodeStatementTerminate
-    | INodeStatementScope;
+    | INodeScope
+    | INodeStatementIf;
