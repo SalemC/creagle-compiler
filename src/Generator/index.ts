@@ -104,9 +104,9 @@ class Generator {
 
                 this.compare(fullRegister, '0');
                 this.jumpWhenZero(label);
-
                 this.generateStatement(statement.statement);
-                this.emit(`${label}:`, false);
+
+                this.emit(`\n${label}:`, false);
 
                 break;
             }
