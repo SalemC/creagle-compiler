@@ -73,18 +73,12 @@ class Parser {
 
                 this.consumeToken();
 
-                const statement = this.parseStatement();
+                const scope = this.parseScope();
 
-                if (statement === null) {
-                    throw new InvalidTokenError();
-                }
-
-                return { type: 'if', expression, statement } satisfies INodeStatementIf;
+                return { type: 'if', expression, scope } satisfies INodeStatementIf;
             }
 
             case TOKEN_TYPES.openCurlyBrace: {
-                this.consumeToken();
-
                 return this.parseScope();
             }
 
@@ -103,7 +97,7 @@ class Parser {
             case TOKEN_TYPES.identifier: {
                 this.consumeToken();
 
-                if (this.peek()?.type !== TOKEN_TYPES.equal) {
+                if (this.peek()?.type !== TOKEN_TYPES.assignment) {
                     throw new InvalidTokenError('=');
                 }
 
@@ -163,6 +157,12 @@ class Parser {
     }
 
     private parseScope(): INodeScope {
+        if (this.peek()?.type !== TOKEN_TYPES.openCurlyBrace) {
+            throw new InvalidTokenError('{');
+        }
+
+        this.consumeToken();
+
         const statements: INodeScope['statements'] = [];
 
         while (this.peek() !== null && this.peek()?.type !== TOKEN_TYPES.closeCurlyBrace) {
@@ -195,7 +195,7 @@ class Parser {
 
         this.consumeToken();
 
-        if (this.peek()?.type !== TOKEN_TYPES.equal) {
+        if (this.peek()?.type !== TOKEN_TYPES.assignment) {
             throw new InvalidTokenError('=');
         }
 
@@ -249,11 +249,20 @@ class Parser {
             };
 
             switch (currentToken.type) {
+                case TOKEN_TYPES.equal: {
+                    expression = {
+                        type: 'binaryExpressionCompare',
+                        ...binaryExpressionBase,
+                    } satisfies TNodeBinaryExpression;
+
+                    break;
+                }
+
                 case TOKEN_TYPES.forwardSlash: {
                     expression = {
                         type: 'binaryExpressionDivide',
                         ...binaryExpressionBase,
-                    };
+                    } satisfies TNodeBinaryExpression;
 
                     break;
                 }
@@ -262,7 +271,7 @@ class Parser {
                     expression = {
                         type: 'binaryExpressionMultiply',
                         ...binaryExpressionBase,
-                    };
+                    } satisfies TNodeBinaryExpression;
 
                     break;
                 }
@@ -271,7 +280,7 @@ class Parser {
                     expression = {
                         type: 'binaryExpressionAdd',
                         ...binaryExpressionBase,
-                    };
+                    } satisfies TNodeBinaryExpression;
 
                     break;
                 }
@@ -280,7 +289,7 @@ class Parser {
                     expression = {
                         type: 'binaryExpressionSubtract',
                         ...binaryExpressionBase,
-                    };
+                    } satisfies TNodeBinaryExpression;
 
                     break;
                 }
@@ -338,6 +347,7 @@ class Parser {
             }
 
             case 'hyphen':
+            case 'equal':
             case 'plus': {
                 return 0;
             }

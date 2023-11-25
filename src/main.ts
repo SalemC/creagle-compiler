@@ -13,10 +13,11 @@ console.info('Lexing...');
 const tokens = lexer.convertToTokens(`
     mutable byte test = 0;
 
-    if (0) test = 1;
-    if (1) test = 2;
+    if (1 == 1) {
+        test = 5;
+    }
 
-    terminate(test * 10);
+    terminate(test);
 `);
 console.log(tokens);
 

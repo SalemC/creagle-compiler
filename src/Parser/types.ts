@@ -44,11 +44,16 @@ interface INodeBinaryExpressionDivide extends INodeBinaryExpressionBase {
     type: 'binaryExpressionDivide';
 }
 
+interface INodeBinaryExpressionCompare extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionCompare';
+}
+
 export type TNodeBinaryExpression =
     | INodeBinaryExpressionDivide
     | INodeBinaryExpressionMultiply
     | INodeBinaryExpressionAdd
-    | INodeBinaryExpressionSubtract;
+    | INodeBinaryExpressionSubtract
+    | INodeBinaryExpressionCompare;
 
 export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 
@@ -81,7 +86,7 @@ export interface INodeScope {
 export interface INodeStatementIf {
     type: 'if';
     expression: TNodeExpression;
-    statement: TNodeStatement;
+    scope: INodeScope;
 }
 
 export type TNodeStatement =

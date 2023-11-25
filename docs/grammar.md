@@ -7,12 +7,9 @@ $$
         \text{?mutable} \space \text{[Type]} \space \text{identifier} = [\text{Expression}]; \\
         \text{identifier} = [\text{Expression}]; \\
         \text{[Scope]} \\
-        \text{if} \space ([\text{Expression}]) \space \text{[Statement]} \\
+        \text{if} \space ([\text{Expression}]) \space \text{[Scope]} \\
     \end{cases} \\
-    [\text{Scope}] &\to
-    \begin{cases}
-        \{\text{[Statement]}^*\} \\
-    \end{cases} \\
+    [\text{Scope}] &\to \{\text{[Statement]}^*\} \\
     [\text{Type}] &\to
     \begin{cases}
         \text{byte} \\
@@ -31,6 +28,7 @@ $$
         [\text{Expression}] \space / \space [\text{Expression}] & \text{precedence} = 1 \\
         [\text{Expression}] + [\text{Expression}] & \text{precedence} = 0 \\
         [\text{Expression}] - [\text{Expression}] & \text{precedence} = 0 \\
+        [\text{Expression}] == [\text{Expression}] & \text{precedence} = 0 \\
     \end{cases} \\
     [\text{Term}] &\to
     \begin{cases}

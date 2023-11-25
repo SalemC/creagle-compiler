@@ -125,10 +125,10 @@ class Lexer {
 
             case '=': {
                 if (this.peek(1) === '=') {
-                    this.recordToken(TOKEN_TYPES.assignment, character);
+                    this.recordToken(TOKEN_TYPES.equal, character);
                     this.consumeCharacter();
                 } else {
-                    this.recordToken(TOKEN_TYPES.equal, character);
+                    this.recordToken(TOKEN_TYPES.assignment, character);
                 }
 
                 this.consumeCharacter();
