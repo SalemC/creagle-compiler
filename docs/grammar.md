@@ -6,6 +6,11 @@ $$
         \text{terminate}([\text{Expression}]); \\
         \text{?mutable} \space \text{[Type]} \space \text{identifier} = [\text{Expression}]; \\
         \text{identifier} = [\text{Expression}]; \\
+        \text{[Scope]} \\
+        \text{if} \space ([\text{Expression}]) \space \text{[Statement]} \\
+    \end{cases} \\
+    [\text{Scope}] &\to
+    \begin{cases}
         \{\text{[Statement]}^*\} \\
     \end{cases} \\
     [\text{Type}] &\to
@@ -23,7 +28,7 @@ $$
     [\text{BinaryExpression}] &\to
     \begin{cases}
         [\text{Expression}] * [\text{Expression}] & \text{precedence} = 1 \\
-        [\text{Expression}]\space/\space[\text{Expression}] & \text{precedence} = 1 \\
+        [\text{Expression}] \space / \space [\text{Expression}] & \text{precedence} = 1 \\
         [\text{Expression}] + [\text{Expression}] & \text{precedence} = 0 \\
         [\text{Expression}] - [\text{Expression}] & \text{precedence} = 0 \\
     \end{cases} \\
