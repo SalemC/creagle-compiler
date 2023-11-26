@@ -231,8 +231,6 @@ class Generator {
                     this.clearRegister(fullRegister);
                 }
 
-                console.log(this.scopes);
-
                 const variableStackLocation = this.getStackPointerOffset(
                     this.stackSizeBytes - variable.stackLocation,
                 );
