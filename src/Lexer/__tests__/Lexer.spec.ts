@@ -24,7 +24,7 @@ describe('Lexer feature', () => {
                 },
             },
             {
-                type: 'equal',
+                type: 'assignment',
                 literal: '=',
                 location: {
                     column: 11,
@@ -154,7 +154,7 @@ describe('Lexer feature', () => {
                 },
             },
             {
-                type: 'equal',
+                type: 'assignment',
                 literal: '=',
                 location: {
                     column: 7,

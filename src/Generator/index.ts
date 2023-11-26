@@ -31,7 +31,7 @@ class Generator {
         this.move('rdi', '0');
         this.emit('syscall');
 
-        return this.assembly;
+        return this.optimise();
     }
 
     private generateStatement(statement: TNodeStatement): void {
@@ -104,7 +104,8 @@ class Generator {
 
                 this.compare(fullRegister, '0');
                 this.jumpWhenZero(label);
-                this.generateStatement(statement.statement);
+
+                this.generateScope(statement.scope);
 
                 this.emit(`\n${label}:`, false);
 
@@ -147,8 +148,11 @@ class Generator {
         this.generateExpression(dataType, expression.rhs);
         this.generateExpression(dataType, expression.lhs);
 
-        this.pop(this.getRegisterFromDataType('qword', 'a'));
-        this.pop(this.getRegisterFromDataType('qword', 'b'));
+        const fullFirstRegister = this.getRegisterFromDataType('qword', 'a');
+        const fullSecondRegister = this.getRegisterFromDataType('qword', 'b');
+
+        this.pop(fullFirstRegister);
+        this.pop(fullSecondRegister);
 
         const firstRegister = this.getRegisterFromDataType(dataType, 'a');
         const secondRegister = this.getRegisterFromDataType(dataType, 'b');
@@ -158,9 +162,14 @@ class Generator {
             binaryExpressionSubtract: (): void => this.subtract(firstRegister, secondRegister),
             binaryExpressionMultiply: (): void => this.multiply(secondRegister),
             binaryExpressionDivide: (): void => this.divide(secondRegister),
+            binaryExpressionCompare: (): void => {
+                this.compare(firstRegister, secondRegister);
+                // We use the byte subset of the a register because the set if equal instruction only sets the first bit.
+                this.setIfEqual(this.getRegisterFromDataType('byte', 'a'));
+            },
         })[expression.type]();
 
-        this.push(this.getRegisterFromDataType('qword', 'a'));
+        this.push(fullFirstRegister);
     }
 
     private generateExpression(dataType: TDataType, expression: TNodeExpression): void {
@@ -172,6 +181,7 @@ class Generator {
             }
 
             case 'binaryExpressionAdd':
+            case 'binaryExpressionCompare':
             case 'binaryExpressionSubtract':
             case 'binaryExpressionMultiply':
             case 'binaryExpressionDivide': {
@@ -194,7 +204,7 @@ class Generator {
 
                 // If we're not using the entire register, we'll zero it out to remove previously written bits.
                 if (registerSubset !== fullRegister) {
-                    this.xor(fullRegister, fullRegister);
+                    this.clearRegister(fullRegister);
                 }
 
                 // Move the literal into a register to clamp its value.
@@ -218,7 +228,7 @@ class Generator {
 
                 // If we're not using the entire register, we'll zero it out to remove previously written bits.
                 if (registerSubset !== fullRegister) {
-                    this.xor(fullRegister, fullRegister);
+                    this.clearRegister(fullRegister);
                 }
 
                 const variableStackLocation = this.getStackPointerOffset(
@@ -291,6 +301,11 @@ class Generator {
         }[dataType][register];
     }
 
+    private optimise(): string {
+        // Remove any sequential push and pops, the value will already be in the register.
+        return this.assembly.replaceAll(/\n^ *push (\w+)\n^ *pop \1/gm, '');
+    }
+
     private generateLabel(prefix?: string): string {
         const labelCount = (this.labelCount += 1);
 
@@ -299,6 +314,14 @@ class Generator {
 
     private getStackPointerOffset(offset: number): string {
         return offset === 0 ? '[rsp]' : `[rsp + ${offset.toString(10)}]`;
+    }
+
+    private clearRegister(register: TRegister): void {
+        this.xor(register, register);
+    }
+
+    private setIfEqual(register: TRegister): void {
+        this.emit(`sete ${register}`);
     }
 
     private push(sourceRegister: TRegister): void {

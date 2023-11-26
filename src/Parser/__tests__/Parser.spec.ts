@@ -25,7 +25,7 @@ describe('Parser feature', () => {
                 },
             },
             {
-                type: 'equal',
+                type: 'assignment',
                 literal: '=',
                 location: {
                     column: 6,
@@ -103,7 +103,7 @@ describe('Parser feature', () => {
                 },
             },
             {
-                type: 'equal',
+                type: 'assignment',
                 literal: '=',
                 location: {
                     column: 6,
@@ -143,7 +143,7 @@ describe('Parser feature', () => {
                 },
             },
             {
-                type: 'equal',
+                type: 'assignment',
                 literal: '=',
                 location: {
                     column: 23,
@@ -241,7 +241,7 @@ describe('Parser feature', () => {
                 },
             },
             {
-                type: 'equal',
+                type: 'assignment',
                 literal: '=',
                 location: {
                     column: 6,
@@ -345,7 +345,7 @@ describe('Parser feature', () => {
                 },
             },
             {
-                type: 'equal',
+                type: 'assignment',
                 literal: '=',
                 location: {
                     column: 6,
@@ -741,7 +741,7 @@ describe('Parser feature', () => {
                     },
                 },
                 {
-                    type: 'equal',
+                    type: 'assignment',
                     literal: '=',
                     location: {
                         column: 6,
