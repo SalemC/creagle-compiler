@@ -11,9 +11,9 @@ const generator = new Generator();
 
 console.info('Lexing...');
 const tokens = lexer.convertToTokens(`
-    mutable byte test = 0;
+    mutable byte test = 2;
 
-    if (1 == 1) {
+    if (0) {
         test = 5;
     }
 

@@ -4,6 +4,7 @@
     "esModuleInterop": true,
     "target": "es6",
     "moduleResolution": "node",
+    "lib": ["es2021"],
     "sourceMap": true,
     "outDir": "build",
     "strict": true,

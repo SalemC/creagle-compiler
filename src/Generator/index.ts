@@ -31,7 +31,7 @@ class Generator {
         this.move('rdi', '0');
         this.emit('syscall');
 
-        return this.assembly;
+        return this.optimise();
     }
 
     private generateStatement(statement: TNodeStatement): void {
@@ -301,6 +301,11 @@ class Generator {
             dword: { a: 'eax', b: 'ebx', c: 'ecx', d: 'edx' },
             qword: { a: 'rax', b: 'rbx', c: 'rcx', d: 'rdx' },
         }[dataType][register];
+    }
+
+    private optimise(): string {
+        // Remove any sequential push and pops, the value will already be in the register.
+        return this.assembly.replaceAll(/\n^ *push (\w+)\n^ *pop \1/gm, '');
     }
 
     private generateLabel(prefix?: string): string {
