@@ -180,8 +180,6 @@ describe('Generator feature', () => {
             '    push rax\n' +
             '    xor rax, rax\n' +
             '    mov al, 8\n' +
-            '    push rax\n' +
-            '    pop rax\n' +
             '    pop rbx\n' +
             '    add al, bl\n' +
             '    push rax\n' +
@@ -221,8 +219,6 @@ describe('Generator feature', () => {
             '    push rax\n' +
             '    xor rax, rax\n' +
             '    mov al, 8\n' +
-            '    push rax\n' +
-            '    pop rax\n' +
             '    pop rbx\n' +
             '    sub al, bl\n' +
             '    push rax\n' +
@@ -262,8 +258,6 @@ describe('Generator feature', () => {
             '    push rax\n' +
             '    xor rax, rax\n' +
             '    mov al, 8\n' +
-            '    push rax\n' +
-            '    pop rax\n' +
             '    pop rbx\n' +
             '    mul bl\n' +
             '    push rax\n' +
@@ -303,8 +297,6 @@ describe('Generator feature', () => {
             '    push rax\n' +
             '    xor rax, rax\n' +
             '    mov al, 8\n' +
-            '    push rax\n' +
-            '    pop rax\n' +
             '    pop rbx\n' +
             '    div bl\n' +
             '    push rax\n' +
@@ -355,19 +347,13 @@ describe('Generator feature', () => {
             '    push rax\n' +
             '    xor rax, rax\n' +
             '    mov al, 2\n' +
-            '    push rax\n' +
-            '    pop rax\n' +
             '    pop rbx\n' +
             '    div bl\n' +
-            '    push rax\n' +
-            '    pop rax\n' +
             '    pop rbx\n' +
             '    mul bl\n' +
             '    push rax\n' +
             '    xor rax, rax\n' +
             '    mov al, 4\n' +
-            '    push rax\n' +
-            '    pop rax\n' +
             '    pop rbx\n' +
             '    add al, bl\n' +
             '    push rax\n' +
