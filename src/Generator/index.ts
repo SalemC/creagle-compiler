@@ -76,12 +76,17 @@ class Generator {
                 const registerSubset = this.getRegisterFromDataType(variable.dataType, 'a');
                 const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
-                // If we're not using the entire register, we'll zero it out to remove previously written bits.
-                if (registerSubset !== fullRegister) {
-                    this.xor(fullRegister, fullRegister);
+                if (registerSubset === fullRegister) {
+                    this.move(fullRegister, '[rsp]');
+                } else {
+                    this.moveAndZeroExtend(
+                        fullRegister,
+                        // Since we're loading a value from the stack, we'll qualify the value before we load it into the register
+                        // to ensure we're only transferring necessary data.
+                        `${variable.dataType} [rsp]`,
+                    );
                 }
 
-                this.move(registerSubset, '[rsp]');
                 this.move(variableStackLocation, fullRegister);
 
                 break;
@@ -202,13 +207,14 @@ class Generator {
                 const registerSubset = this.getRegisterFromDataType(dataType, 'a');
                 const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
-                // If we're not using the entire register, we'll zero it out to remove previously written bits.
-                if (registerSubset !== fullRegister) {
-                    this.clearRegister(fullRegister);
-                }
-
                 // Move the literal into a register to clamp its value.
                 this.move(registerSubset, term.literal);
+
+                // If we're not using the full register, ensure the rest of the bits are zero.
+                if (registerSubset !== fullRegister) {
+                    this.moveAndZeroExtend(fullRegister, `${dataType} ${registerSubset}`);
+                }
+
                 this.push(fullRegister);
 
                 break;
@@ -226,17 +232,21 @@ class Generator {
                 const registerSubset = this.getRegisterFromDataType(dataType, 'a');
                 const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
-                // If we're not using the entire register, we'll zero it out to remove previously written bits.
-                if (registerSubset !== fullRegister) {
-                    this.clearRegister(fullRegister);
-                }
-
                 const variableStackLocation = this.getStackPointerOffset(
                     this.stackSizeBytes - variable.stackLocation,
                 );
 
-                // Move the value into a register to let the register clamp it.
-                this.move(registerSubset, variableStackLocation);
+                if (registerSubset === fullRegister) {
+                    this.move(fullRegister, variableStackLocation);
+                } else {
+                    this.moveAndZeroExtend(
+                        fullRegister,
+                        // Since we're loading a value from the stack, we'll qualify the value before we load it into the register
+                        // to ensure we're only transferring necessary data.
+                        `${dataType} ${variableStackLocation}`,
+                    );
+                }
+
                 this.push(fullRegister);
 
                 break;
@@ -316,10 +326,6 @@ class Generator {
         return offset === 0 ? '[rsp]' : `[rsp + ${offset.toString(10)}]`;
     }
 
-    private clearRegister(register: TRegister): void {
-        this.xor(register, register);
-    }
-
     private setIfEqual(register: TRegister): void {
         this.emit(`sete ${register}`);
     }
@@ -350,8 +356,12 @@ class Generator {
         this.emit(`xor ${register}, ${value}`);
     }
 
-    private move(register: TRegister, value: string): void {
+    private move(register: TRegister, value: TRegister): void {
         this.emit(`mov ${register}, ${value}`);
+    }
+
+    private moveAndZeroExtend(register: TRegister, value: TRegister): void {
+        this.emit(`movzx ${register}, ${value}`);
     }
 
     private add(register: TRegister, value: TRegister): void {
