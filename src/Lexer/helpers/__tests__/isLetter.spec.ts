@@ -1,6 +1,6 @@
 import { isLetter } from '../isLetter';
 
-describe('isLetter', () => {
+describe('isLetter unit', () => {
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach((character) => {
         it(`should return true for ${character}`, () => {
             expect(isLetter(character)).toEqual(true);
