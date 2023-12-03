@@ -23,10 +23,10 @@ Understanding how compilers work is a complex yet essential aspect of programmin
 
 ## Structure
 
-The project structure is organized as follows:
+The project structure is organised as follows:
 
 -   `src/`: Contains the source code of the compiler.
-    -   `Lexer/index.ts`: Implements the lexer for tokenization.
+    -   `Lexer/index.ts`: Implements the lexer for tokenisation.
     -   `Parser/index.ts`: Implements the parser for creating an abstract syntax tree (AST).
     -   `Generator/index.ts`: Implements the generator for generating x86-64 Linux assembly code.
     -   `main.ts`: Entry point for the compiler.
