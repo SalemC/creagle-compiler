@@ -52,7 +52,7 @@ class Generator {
 
                 this.getCurrentScope().variables[identifier] = {
                     stackLocation: this.stackSizeBytes,
-                    dataType: statement.dataType,
+                    type: statement.dataType,
                     unsigned: statement.unsigned,
                     mutable: statement.mutable,
                 };
@@ -75,7 +75,7 @@ class Generator {
 
                 this.generateExpression(
                     {
-                        type: variable.dataType,
+                        type: variable.type,
                         unsigned: variable.unsigned,
                     },
                     statement.expression,
@@ -85,13 +85,13 @@ class Generator {
                     this.stackSizeBytes - variable.stackLocation,
                 );
 
-                const registerSubset = this.getRegisterFromDataType(variable.dataType, 'a');
+                const registerSubset = this.getRegisterFromDataType(variable.type, 'a');
                 const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
                 if (registerSubset === fullRegister) {
                     this.move(fullRegister, '[rsp]');
                 } else {
-                    this.moveAndExtend(variable.unsigned, variable.dataType, fullRegister, '[rsp]');
+                    this.moveAndExtend(variable.unsigned, variable.type, fullRegister, '[rsp]');
                 }
 
                 this.move(variableStackLocation, fullRegister);
@@ -258,7 +258,7 @@ class Generator {
                 } else {
                     this.moveAndExtend(
                         variable.unsigned,
-                        variable.dataType,
+                        variable.type,
                         fullRegister,
                         variableStackLocation,
                     );
