@@ -1,0 +1,8 @@
+byte success = 1;
+byte failure = 0;
+
+if (0 + 1 == 1) {
+    terminate(success);
+}
+
+terminate(failure);

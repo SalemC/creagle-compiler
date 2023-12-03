@@ -1,0 +1,5 @@
+mutable unsigned byte variable = 0;
+
+variable = 1;
+
+terminate(variable);
