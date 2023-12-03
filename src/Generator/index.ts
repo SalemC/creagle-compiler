@@ -1,9 +1,9 @@
+import { type IVariable, type TRegister, type IScope, type IDataTypeInfo } from './types';
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
 import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
-import { type IVariable, type TRegister, type IScope } from './types';
+import { wrapInteger } from './helpers/wrapInteger';
 import {
-    type TDataType,
     type INodeExpressionTerm,
     type TNodeExpression,
     type TNodeStatement,
@@ -20,9 +20,8 @@ class Generator {
     public generateAssembly(statements: readonly TNodeStatement[]): string {
         this.reset();
 
-        // We don't use the emit method here because these assembly lines should not be indented.
-        this.assembly += 'global _start\n\n';
-        this.assembly += '_start:\n';
+        this.emit('global _start\n', false);
+        this.emit('_start:', false);
 
         statements.forEach(this.generateStatement.bind(this));
 
@@ -43,11 +42,18 @@ class Generator {
                     throw new IdentifierRedeclarationError(identifier);
                 }
 
-                this.generateExpression(statement.dataType, statement.expression);
+                this.generateExpression(
+                    {
+                        type: statement.dataType,
+                        unsigned: statement.unsigned,
+                    },
+                    statement.expression,
+                );
 
                 this.getCurrentScope().variables[identifier] = {
                     stackLocation: this.stackSizeBytes,
                     dataType: statement.dataType,
+                    unsigned: statement.unsigned,
                     mutable: statement.mutable,
                 };
 
@@ -67,7 +73,13 @@ class Generator {
                     throw new ConstantReassignmentError(identifier);
                 }
 
-                this.generateExpression(variable.dataType, statement.expression);
+                this.generateExpression(
+                    {
+                        type: variable.dataType,
+                        unsigned: variable.unsigned,
+                    },
+                    statement.expression,
+                );
 
                 const variableStackLocation = this.getStackPointerOffset(
                     this.stackSizeBytes - variable.stackLocation,
@@ -79,12 +91,7 @@ class Generator {
                 if (registerSubset === fullRegister) {
                     this.move(fullRegister, '[rsp]');
                 } else {
-                    this.moveAndZeroExtend(
-                        fullRegister,
-                        // Since we're loading a value from the stack, we'll qualify the value before we load it into the register
-                        // to ensure we're only transferring necessary data.
-                        `${variable.dataType} [rsp]`,
-                    );
+                    this.moveAndExtend(variable.unsigned, variable.dataType, fullRegister, '[rsp]');
                 }
 
                 this.move(variableStackLocation, fullRegister);
@@ -99,8 +106,7 @@ class Generator {
             }
 
             case 'if': {
-                // We only check if the value is not zero, so a byte is sufficient storage.
-                this.generateExpression('byte', statement.expression);
+                this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
 
                 const fullRegister = this.getRegisterFromDataType('qword', 'a');
                 const label = this.generateLabel('if');
@@ -118,7 +124,7 @@ class Generator {
             }
 
             case 'terminate': {
-                this.generateExpression('byte', statement.expression);
+                this.generateExpression({ type: 'byte', unsigned: true }, statement.expression);
 
                 this.move('rax', '60');
                 this.pop('rdi');
@@ -149,9 +155,12 @@ class Generator {
         this.scopes.pop();
     }
 
-    private generateBinaryExpression(dataType: TDataType, expression: TNodeBinaryExpression): void {
-        this.generateExpression(dataType, expression.rhs);
-        this.generateExpression(dataType, expression.lhs);
+    private generateBinaryExpression(
+        dataTypeInfo: IDataTypeInfo,
+        expression: TNodeBinaryExpression,
+    ): void {
+        this.generateExpression(dataTypeInfo, expression.rhs);
+        this.generateExpression(dataTypeInfo, expression.lhs);
 
         const fullFirstRegister = this.getRegisterFromDataType('qword', 'a');
         const fullSecondRegister = this.getRegisterFromDataType('qword', 'b');
@@ -159,8 +168,8 @@ class Generator {
         this.pop(fullFirstRegister);
         this.pop(fullSecondRegister);
 
-        const firstRegister = this.getRegisterFromDataType(dataType, 'a');
-        const secondRegister = this.getRegisterFromDataType(dataType, 'b');
+        const firstRegister = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
+        const secondRegister = this.getRegisterFromDataType(dataTypeInfo.type, 'b');
 
         ({
             binaryExpressionAdd: (): void => this.add(firstRegister, secondRegister),
@@ -177,10 +186,10 @@ class Generator {
         this.push(fullFirstRegister);
     }
 
-    private generateExpression(dataType: TDataType, expression: TNodeExpression): void {
+    private generateExpression(dataTypeInfo: IDataTypeInfo, expression: TNodeExpression): void {
         switch (expression.type) {
             case 'term': {
-                this.generateTerm(dataType, expression.term);
+                this.generateTerm(dataTypeInfo, expression.term);
 
                 break;
             }
@@ -190,7 +199,7 @@ class Generator {
             case 'binaryExpressionSubtract':
             case 'binaryExpressionMultiply':
             case 'binaryExpressionDivide': {
-                this.generateBinaryExpression(dataType, expression);
+                this.generateBinaryExpression(dataTypeInfo, expression);
 
                 break;
             }
@@ -201,18 +210,26 @@ class Generator {
         }
     }
 
-    private generateTerm(dataType: TDataType, term: INodeExpressionTerm['term']): void {
+    private generateTerm(dataTypeInfo: IDataTypeInfo, term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
-                const registerSubset = this.getRegisterFromDataType(dataType, 'a');
+                const registerSubset = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
                 const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
                 // Move the literal into a register to clamp its value.
-                this.move(registerSubset, term.literal);
+                this.move(
+                    registerSubset,
+                    this.wrapIntegerLiteral(dataTypeInfo, term.literal).toString(10),
+                );
 
-                // If we're not using the full register, ensure the rest of the bits are zero.
+                // If we're not using the full register, ensure only the correct data is transferred.
                 if (registerSubset !== fullRegister) {
-                    this.moveAndZeroExtend(fullRegister, `${dataType} ${registerSubset}`);
+                    this.moveAndExtend(
+                        dataTypeInfo.unsigned,
+                        dataTypeInfo.type,
+                        fullRegister,
+                        registerSubset,
+                    );
                 }
 
                 this.push(fullRegister);
@@ -229,7 +246,7 @@ class Generator {
                     throw new UndeclaredIdentifierError(identifier);
                 }
 
-                const registerSubset = this.getRegisterFromDataType(dataType, 'a');
+                const registerSubset = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
                 const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
                 const variableStackLocation = this.getStackPointerOffset(
@@ -239,11 +256,11 @@ class Generator {
                 if (registerSubset === fullRegister) {
                     this.move(fullRegister, variableStackLocation);
                 } else {
-                    this.moveAndZeroExtend(
+                    this.moveAndExtend(
+                        variable.unsigned,
+                        variable.dataType,
                         fullRegister,
-                        // Since we're loading a value from the stack, we'll qualify the value before we load it into the register
-                        // to ensure we're only transferring necessary data.
-                        `${dataType} ${variableStackLocation}`,
+                        variableStackLocation,
                     );
                 }
 
@@ -253,7 +270,7 @@ class Generator {
             }
 
             case 'parenthesised': {
-                this.generateExpression(dataType, term.expression);
+                this.generateExpression(dataTypeInfo, term.expression);
 
                 break;
             }
@@ -300,7 +317,7 @@ class Generator {
     }
 
     private getRegisterFromDataType(
-        dataType: TDataType,
+        dataType: IDataTypeInfo['type'],
         register: 'a' | 'b' | 'c' | 'd',
     ): TRegister {
         return {
@@ -309,6 +326,34 @@ class Generator {
             dword: { a: 'eax', b: 'ebx', c: 'ecx', d: 'edx' },
             qword: { a: 'rax', b: 'rbx', c: 'rcx', d: 'rdx' },
         }[dataType][register];
+    }
+
+    private wrapIntegerLiteral(dataTypeInfo: IDataTypeInfo, literal: string): bigint {
+        const { min, max } = {
+            byte: {
+                min: dataTypeInfo.unsigned ? 0 : -128,
+                max: dataTypeInfo.unsigned ? 255 : 127,
+            },
+
+            word: {
+                min: dataTypeInfo.unsigned ? 0 : -32768,
+                max: dataTypeInfo.unsigned ? 65535 : 32767,
+            },
+
+            dword: {
+                min: dataTypeInfo.unsigned ? 0 : -2147483648,
+                max: dataTypeInfo.unsigned ? 4294967295 : 2147483647,
+            },
+
+            qword: {
+                min: dataTypeInfo.unsigned ? BigInt(0) : BigInt('-9223372036854775808'),
+                max: dataTypeInfo.unsigned
+                    ? BigInt('18446744073709551615')
+                    : BigInt('9223372036854775807'),
+            },
+        }[dataTypeInfo.type];
+
+        return wrapInteger(BigInt(min), BigInt(literal), BigInt(max));
     }
 
     private optimise(): string {
@@ -352,12 +397,26 @@ class Generator {
         this.emit(`cmp ${register}, ${value}`);
     }
 
-    private xor(register: TRegister, value: TRegister): void {
-        this.emit(`xor ${register}, ${value}`);
-    }
-
     private move(register: TRegister, value: TRegister): void {
         this.emit(`mov ${register}, ${value}`);
+    }
+
+    private moveAndExtend(
+        unsigned: boolean,
+        dataType: IDataTypeInfo['type'],
+        register: TRegister,
+        value: TRegister,
+    ): void {
+        // Qualify the value to ensure we're only transferring necessary data.
+        const qualifiedValue = `${dataType} ${value}`;
+
+        unsigned
+            ? this.moveAndZeroExtend(register, qualifiedValue)
+            : this.moveSignedAndExtend(register, qualifiedValue);
+    }
+
+    private moveSignedAndExtend(register: TRegister, value: TRegister): void {
+        this.emit(`movsx ${register}, ${value}`);
     }
 
     private moveAndZeroExtend(register: TRegister, value: TRegister): void {

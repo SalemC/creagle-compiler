@@ -12,10 +12,10 @@ $$
     [\text{Scope}] &\to \{\text{[Statement]}^*\} \\
     [\text{Type}] &\to
     \begin{cases}
-        \text{byte} \\
-        \text{short} \\
-        \text{integer} \\
-        \text{long} \\
+        \text{?unsigned byte} \\
+        \text{?unsigned short} \\
+        \text{?unsigned integer} \\
+        \text{?unsigned long} \\
     \end{cases} \\
     [\text{Expression}] &\to
     \begin{cases}
