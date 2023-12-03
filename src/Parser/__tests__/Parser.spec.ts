@@ -71,6 +71,7 @@ describe('Parser feature', () => {
                     },
                 },
                 mutable: false,
+                unsigned: false,
                 expression: {
                     type: 'term',
                     term: {
@@ -196,6 +197,7 @@ describe('Parser feature', () => {
                     },
                 },
                 mutable: false,
+                unsigned: false,
             },
             {
                 type: 'variable',
@@ -216,6 +218,7 @@ describe('Parser feature', () => {
                     },
                 },
                 mutable: false,
+                unsigned: false,
             },
         ]);
     });
@@ -320,6 +323,7 @@ describe('Parser feature', () => {
                     },
                 },
                 mutable: false,
+                unsigned: false,
             },
         ]);
     });
@@ -424,6 +428,7 @@ describe('Parser feature', () => {
                     },
                 },
                 mutable: false,
+                unsigned: false,
             },
         ]);
     });

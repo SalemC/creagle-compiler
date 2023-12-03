@@ -64,6 +64,7 @@ export interface INodeStatementVariable {
     dataType: TDataType;
     identifier: IToken;
     expression: TNodeExpression;
+    unsigned: boolean;
     mutable: boolean;
 }
 

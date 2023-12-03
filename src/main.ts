@@ -11,13 +11,13 @@ const generator = new Generator();
 
 console.info('Lexing...');
 const tokens = lexer.convertToTokens(`
-    mutable byte test = 2;
+    mutable byte variable = 0;
 
-    if (0) {
-        test = 5;
+    if (1) {
+        variable = 1;
     }
 
-    terminate(test);
+    terminate(variable);
 `);
 console.log(tokens);
 

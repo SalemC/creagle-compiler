@@ -51,10 +51,6 @@ class Parser {
             return null;
         }
 
-        if (this.isTokenOfDataType(token.type)) {
-            return this.parseVariable(token.type, false);
-        }
-
         switch (token.type) {
             case TOKEN_TYPES.if: {
                 this.consumeToken();
@@ -82,16 +78,9 @@ class Parser {
                 return this.parseScope();
             }
 
+            case TOKEN_TYPES.unsigned:
             case TOKEN_TYPES.mutable: {
-                this.consumeToken();
-
-                const dataType = this.peek()?.type ?? null;
-
-                if (dataType === null || !this.isTokenOfDataType(dataType)) {
-                    throw new InvalidTokenError();
-                }
-
-                return this.parseVariable(dataType, true);
+                return this.parseVariable();
             }
 
             case TOKEN_TYPES.identifier: {
@@ -151,6 +140,10 @@ class Parser {
             }
 
             default: {
+                if (this.isTokenOfDataType(token.type)) {
+                    return this.parseVariable();
+                }
+
                 throw new InvalidTokenError();
             }
         }
@@ -181,10 +174,28 @@ class Parser {
         return { type: 'scope', statements } satisfies INodeScope;
     }
 
-    private parseVariable(
-        dataTypeSpecifier: TDataTypeSpecifier,
-        mutable: boolean,
-    ): INodeStatementVariable {
+    private parseVariable(): INodeStatementVariable {
+        let unsigned = false;
+        let mutable = false;
+
+        if (this.peek()?.type === TOKEN_TYPES.mutable) {
+            this.consumeToken();
+
+            mutable = true;
+        }
+
+        if (this.peek()?.type === TOKEN_TYPES.unsigned) {
+            this.consumeToken();
+
+            unsigned = true;
+        }
+
+        const dataType = this.peek()?.type ?? null;
+
+        if (dataType === null || !this.isTokenOfDataType(dataType)) {
+            throw new InvalidTokenError();
+        }
+
         this.consumeToken();
 
         const identifier = this.peek();
@@ -211,10 +222,11 @@ class Parser {
 
         return {
             type: 'variable',
-            dataType: this.convertDataTypeSpecifierToDataType(dataTypeSpecifier),
+            dataType: this.convertDataTypeSpecifierToDataType(dataType),
             identifier,
             expression,
             mutable,
+            unsigned,
         } satisfies INodeStatementVariable;
     }
 

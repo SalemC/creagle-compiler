@@ -1,8 +1,12 @@
 import { type TDataType } from '../Parser/types';
 
-export interface IVariable {
+export interface IDataTypeInfo {
+    type: TDataType;
+    unsigned: boolean;
+}
+
+export interface IVariable extends IDataTypeInfo {
     stackLocation: number;
-    dataType: TDataType;
     mutable: boolean;
 }
 

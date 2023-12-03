@@ -169,17 +169,18 @@ describe('Generator feature', () => {
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
                 mutable: true,
+                unsigned: false,
             },
         ]);
 
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    xor rax, rax\n' +
             '    mov al, 2\n' +
+            '    movsx rax, byte al\n' +
             '    push rax\n' +
-            '    xor rax, rax\n' +
             '    mov al, 8\n' +
+            '    movsx rax, byte al\n' +
             '    pop rbx\n' +
             '    add al, bl\n' +
             '    push rax\n' +
@@ -208,17 +209,18 @@ describe('Generator feature', () => {
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
                 mutable: true,
+                unsigned: false,
             },
         ]);
 
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    xor rax, rax\n' +
             '    mov al, 2\n' +
+            '    movsx rax, byte al\n' +
             '    push rax\n' +
-            '    xor rax, rax\n' +
             '    mov al, 8\n' +
+            '    movsx rax, byte al\n' +
             '    pop rbx\n' +
             '    sub al, bl\n' +
             '    push rax\n' +
@@ -247,17 +249,18 @@ describe('Generator feature', () => {
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
                 mutable: true,
+                unsigned: false,
             },
         ]);
 
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    xor rax, rax\n' +
             '    mov al, 2\n' +
+            '    movsx rax, byte al\n' +
             '    push rax\n' +
-            '    xor rax, rax\n' +
             '    mov al, 8\n' +
+            '    movsx rax, byte al\n' +
             '    pop rbx\n' +
             '    mul bl\n' +
             '    push rax\n' +
@@ -286,17 +289,18 @@ describe('Generator feature', () => {
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
                 mutable: true,
+                unsigned: false,
             },
         ]);
 
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    xor rax, rax\n' +
             '    mov al, 2\n' +
+            '    movsx rax, byte al\n' +
             '    push rax\n' +
-            '    xor rax, rax\n' +
             '    mov al, 8\n' +
+            '    movsx rax, byte al\n' +
             '    pop rbx\n' +
             '    div bl\n' +
             '    push rax\n' +
@@ -333,27 +337,28 @@ describe('Generator feature', () => {
                     },
                 },
                 mutable: true,
+                unsigned: false,
             },
         ]);
 
         const expectedAssembly =
             'global _start\n\n' +
             '_start:\n' +
-            '    xor rax, rax\n' +
             '    mov al, 3\n' +
+            '    movsx rax, byte al\n' +
             '    push rax\n' +
-            '    xor rax, rax\n' +
             '    mov al, 1\n' +
+            '    movsx rax, byte al\n' +
             '    push rax\n' +
-            '    xor rax, rax\n' +
             '    mov al, 2\n' +
+            '    movsx rax, byte al\n' +
             '    pop rbx\n' +
             '    div bl\n' +
             '    pop rbx\n' +
             '    mul bl\n' +
             '    push rax\n' +
-            '    xor rax, rax\n' +
             '    mov al, 4\n' +
+            '    movsx rax, byte al\n' +
             '    pop rbx\n' +
             '    add al, bl\n' +
             '    push rax\n' +
