@@ -42,3 +42,6 @@ yarn.lock
 
 # Ignore the lib ts files.
 /lib
+
+# Ignore the test file
+/examples/test.creagle

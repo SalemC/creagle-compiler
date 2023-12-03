@@ -94,6 +94,8 @@ class Generator {
                     this.moveAndExtend(variable.unsigned, variable.type, fullRegister, '[rsp]');
                 }
 
+                // Direct memory to memory transfers are disallowed in x86-64 assembly,
+                // therefore we have to move into a register, then from the register to the address.
                 this.move(variableStackLocation, fullRegister);
 
                 break;
