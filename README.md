@@ -28,7 +28,7 @@ The project structure is organized as follows:
 - `src/`: Contains the source code of the compiler.
     - `Lexer/index.ts`: Implements the lexer for tokenization.
     - `Parser/index.ts`: Implements the parser for creating an abstract syntax tree (AST).
-    - `Generator/index.ts`: Generates x86-64 Linux assembly code.
+    - `Generator/index.ts`: Implements the generator for generating x86-64 Linux assembly code.
     - `main.ts`: Entry point for the compiler.
  
 ## Contributing
