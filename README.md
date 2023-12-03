@@ -4,11 +4,11 @@ This repository contains a simple compiler built in TypeScript for a completely 
 
 Table of Contents
 
-- [Introduction](#introduction)
-- [Features](#features)
-- [Structure](#structure)
-- [Contributing](#contributing)
-- [License](#license)
+-   [Introduction](#introduction)
+-   [Features](#features)
+-   [Structure](#structure)
+-   [Contributing](#contributing)
+-   [License](#license)
 
 ## Introduction
 
@@ -16,21 +16,22 @@ Understanding how compilers work is a complex yet essential aspect of programmin
 
 ## Features
 
-- **Lexer and Parser**: The compiler includes a lexer and parser for the custom language to convert source code into an abstract syntax tree (AST).
-- **Semantic Analysis**: Basic semantic analysis is performed during parsing to check for simple language rules and enforce basic constraints.
-- **Code Generation**: The compiler generates x86-64 Linux assembly code from the AST.
-- **Example Language**: The custom language is designed to be minimal and straightforward, allowing for a clear understanding of the compilation process.
+-   **Lexer and Parser**: The compiler includes a lexer and parser for the custom language to convert source code into an abstract syntax tree (AST).
+-   **Semantic Analysis**: Basic semantic analysis is performed during parsing to check for simple language rules and enforce basic constraints.
+-   **Code Generation**: The compiler generates x86-64 Linux assembly code from the AST.
+-   **Example Language**: The custom language is designed to be minimal and straightforward, allowing for a clear understanding of the compilation process.
 
 ## Structure
 
 The project structure is organized as follows:
 
-- `src/`: Contains the source code of the compiler.
-    - `Lexer/index.ts`: Implements the lexer for tokenization.
-    - `Parser/index.ts`: Implements the parser for creating an abstract syntax tree (AST).
-    - `Generator/index.ts`: Implements the generator for generating x86-64 Linux assembly code.
-    - `main.ts`: Entry point for the compiler.
- 
+-   `src/`: Contains the source code of the compiler.
+    -   `Lexer/index.ts`: Implements the lexer for tokenization.
+    -   `Parser/index.ts`: Implements the parser for creating an abstract syntax tree (AST).
+    -   `Generator/index.ts`: Implements the generator for generating x86-64 Linux assembly code.
+    -   `main.ts`: Entry point for the compiler.
+-   `examples/`: Includes sample source code files written in the custom language.
+
 ## Contributing
 
 Contributions to improve the code, add features, or fix bugs are welcome. If you find any issues or have suggestions, please open an [issue](https://github.com/SalemC/creagle-compiler/issues/new).
