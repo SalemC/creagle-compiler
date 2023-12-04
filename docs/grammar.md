@@ -30,9 +30,9 @@ $$
         [\text{Expression}] - [\text{Expression}] & \text{precedence} = 0 \\
         [\text{Expression}] == [\text{Expression}] & \text{precedence} = 0 \\
         [\text{Expression}] \lt [\text{Expression}] & \text{precedence} = 0 \\
-        [\text{Expression}] \lt = [\text{Expression}] & \text{precedence} = 0 \\
+        [\text{Expression}] \lt= [\text{Expression}] & \text{precedence} = 0 \\
         [\text{Expression}] \gt [\text{Expression}] & \text{precedence} = 0 \\
-        [\text{Expression}] \gt = [\text{Expression}] & \text{precedence} = 0 \\
+        [\text{Expression}] \gt= [\text{Expression}] & \text{precedence} = 0 \\
     \end{cases} \\
     [\text{Term}] &\to
     \begin{cases}
