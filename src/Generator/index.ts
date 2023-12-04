@@ -85,8 +85,8 @@ class Generator {
                     this.stackSizeBytes - variable.stackLocation,
                 );
 
+                const fullRegister = 'rax';
                 const registerSubset = this.getRegisterFromDataType(variable.type, 'a');
-                const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
                 if (registerSubset === fullRegister) {
                     this.move(fullRegister, '[rsp]');
@@ -108,14 +108,11 @@ class Generator {
             }
 
             case 'if': {
-                this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
-
-                const fullRegister = this.getRegisterFromDataType('qword', 'a');
                 const label = this.generateLabel('if');
 
-                this.pop(fullRegister);
+                this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
 
-                this.compare(fullRegister, '0');
+                this.compare('qword [rsp]', '0');
                 this.jumpWhenZero(label);
 
                 this.generateScope(statement.scope);
@@ -164,8 +161,8 @@ class Generator {
         this.generateExpression(dataTypeInfo, expression.rhs);
         this.generateExpression(dataTypeInfo, expression.lhs);
 
-        const fullFirstRegister = this.getRegisterFromDataType('qword', 'a');
-        const fullSecondRegister = this.getRegisterFromDataType('qword', 'b');
+        const fullFirstRegister = 'rax';
+        const fullSecondRegister = 'rbx';
 
         this.pop(fullFirstRegister);
         this.pop(fullSecondRegister);
@@ -180,8 +177,10 @@ class Generator {
             binaryExpressionDivide: (): void => this.divide(secondRegister),
             binaryExpressionCompare: (): void => {
                 this.compare(firstRegister, secondRegister);
-                // We use the byte subset of the a register because the set if equal instruction only sets the first bit.
-                this.setIfEqual(this.getRegisterFromDataType('byte', 'a'));
+                this.setIfEqual('al');
+                // After we've performed the comparison, we'll want to zero out the
+                // register with the result of the comparison is in to prevent overlapping bits.
+                this.moveAndZeroExtend(fullFirstRegister, 'byte al');
             },
         })[expression.type]();
 
@@ -215,8 +214,8 @@ class Generator {
     private generateTerm(dataTypeInfo: IDataTypeInfo, term: INodeExpressionTerm['term']): void {
         switch (term.type) {
             case 'integer': {
+                const fullRegister = 'rax';
                 const registerSubset = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
-                const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
                 // Move the literal into a register to clamp its value.
                 this.move(
@@ -248,8 +247,8 @@ class Generator {
                     throw new UndeclaredIdentifierError(identifier);
                 }
 
+                const fullRegister = 'rax';
                 const registerSubset = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
-                const fullRegister = this.getRegisterFromDataType('qword', 'a');
 
                 const variableStackLocation = this.getStackPointerOffset(
                     this.stackSizeBytes - variable.stackLocation,
