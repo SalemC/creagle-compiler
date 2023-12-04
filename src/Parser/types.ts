@@ -48,12 +48,32 @@ interface INodeBinaryExpressionCompare extends INodeBinaryExpressionBase {
     type: 'binaryExpressionCompare';
 }
 
+interface INodeBinaryExpressionGreaterThan extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionGreaterThan';
+}
+
+interface INodeBinaryExpressionGreaterThanOrEqual extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionGreaterThanOrEqual';
+}
+
+interface INodeBinaryExpressionLessThan extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionLessThan';
+}
+
+interface INodeBinaryExpressionLessThanOrEqual extends INodeBinaryExpressionBase {
+    type: 'binaryExpressionLessThanOrEqual';
+}
+
 export type TNodeBinaryExpression =
     | INodeBinaryExpressionDivide
     | INodeBinaryExpressionMultiply
     | INodeBinaryExpressionAdd
     | INodeBinaryExpressionSubtract
-    | INodeBinaryExpressionCompare;
+    | INodeBinaryExpressionCompare
+    | INodeBinaryExpressionGreaterThan
+    | INodeBinaryExpressionGreaterThanOrEqual
+    | INodeBinaryExpressionLessThan
+    | INodeBinaryExpressionLessThanOrEqual;
 
 export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 
