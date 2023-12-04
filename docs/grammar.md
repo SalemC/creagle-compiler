@@ -24,11 +24,15 @@ $$
     \end{cases} \\
     [\text{BinaryExpression}] &\to
     \begin{cases}
-        [\text{Expression}] * [\text{Expression}] & \text{precedence} = 1 \\
+        [\text{Expression}] \ast [\text{Expression}] & \text{precedence} = 1 \\
         [\text{Expression}] \space / \space [\text{Expression}] & \text{precedence} = 1 \\
         [\text{Expression}] + [\text{Expression}] & \text{precedence} = 0 \\
         [\text{Expression}] - [\text{Expression}] & \text{precedence} = 0 \\
         [\text{Expression}] == [\text{Expression}] & \text{precedence} = 0 \\
+        [\text{Expression}] \lt [\text{Expression}] & \text{precedence} = 0 \\
+        [\text{Expression}] \lt= [\text{Expression}] & \text{precedence} = 0 \\
+        [\text{Expression}] \gt [\text{Expression}] & \text{precedence} = 0 \\
+        [\text{Expression}] \gt= [\text{Expression}] & \text{precedence} = 0 \\
     \end{cases} \\
     [\text{Term}] &\to
     \begin{cases}

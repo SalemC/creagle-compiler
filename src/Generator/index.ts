@@ -178,8 +178,31 @@ class Generator {
             binaryExpressionCompare: (): void => {
                 this.compare(firstRegister, secondRegister);
                 this.setIfEqual('al');
-                // After we've performed the comparison, we'll want to zero out the
-                // register with the result of the comparison is in to prevent overlapping bits.
+                // Ensure upper bits are zero.
+                this.moveAndZeroExtend(fullFirstRegister, 'byte al');
+            },
+            binaryExpressionGreaterThan: (): void => {
+                this.compare(firstRegister, secondRegister);
+                this.setIfGreaterThan('al');
+                // Ensure upper bits are zero.
+                this.moveAndZeroExtend(fullFirstRegister, 'byte al');
+            },
+            binaryExpressionGreaterThanOrEqual: (): void => {
+                this.compare(firstRegister, secondRegister);
+                this.setIfGreaterThanOrEqual('al');
+                // Ensure upper bits are zero.
+                this.moveAndZeroExtend(fullFirstRegister, 'byte al');
+            },
+            binaryExpressionLessThan: (): void => {
+                this.compare(firstRegister, secondRegister);
+                this.setIfLessThan('al');
+                // Ensure upper bits are zero.
+                this.moveAndZeroExtend(fullFirstRegister, 'byte al');
+            },
+            binaryExpressionLessThanOrEqual: (): void => {
+                this.compare(firstRegister, secondRegister);
+                this.setIfLessThanOrEqual('al');
+                // Ensure upper bits are zero.
                 this.moveAndZeroExtend(fullFirstRegister, 'byte al');
             },
         })[expression.type]();
@@ -197,6 +220,10 @@ class Generator {
 
             case 'binaryExpressionAdd':
             case 'binaryExpressionCompare':
+            case 'binaryExpressionLessThan':
+            case 'binaryExpressionLessThanOrEqual':
+            case 'binaryExpressionGreaterThan':
+            case 'binaryExpressionGreaterThanOrEqual':
             case 'binaryExpressionSubtract':
             case 'binaryExpressionMultiply':
             case 'binaryExpressionDivide': {
@@ -370,6 +397,22 @@ class Generator {
 
     private getStackPointerOffset(offset: number): string {
         return offset === 0 ? '[rsp]' : `[rsp + ${offset.toString(10)}]`;
+    }
+
+    private setIfGreaterThanOrEqual(register: TRegister): void {
+        this.emit(`setge ${register}`);
+    }
+
+    private setIfGreaterThan(register: TRegister): void {
+        this.emit(`setg ${register}`);
+    }
+
+    private setIfLessThanOrEqual(register: TRegister): void {
+        this.emit(`setle ${register}`);
+    }
+
+    private setIfLessThan(register: TRegister): void {
+        this.emit(`setl ${register}`);
     }
 
     private setIfEqual(register: TRegister): void {

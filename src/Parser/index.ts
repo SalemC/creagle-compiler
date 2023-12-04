@@ -261,6 +261,42 @@ class Parser {
             };
 
             switch (currentToken.type) {
+                case TOKEN_TYPES.lessThan: {
+                    expression = {
+                        type: 'binaryExpressionLessThan',
+                        ...binaryExpressionBase,
+                    } satisfies TNodeBinaryExpression;
+
+                    break;
+                }
+
+                case TOKEN_TYPES.lessThanOrEqual: {
+                    expression = {
+                        type: 'binaryExpressionLessThanOrEqual',
+                        ...binaryExpressionBase,
+                    } satisfies TNodeBinaryExpression;
+
+                    break;
+                }
+
+                case TOKEN_TYPES.greaterThan: {
+                    expression = {
+                        type: 'binaryExpressionGreaterThan',
+                        ...binaryExpressionBase,
+                    } satisfies TNodeBinaryExpression;
+
+                    break;
+                }
+
+                case TOKEN_TYPES.greaterThanOrEqual: {
+                    expression = {
+                        type: 'binaryExpressionGreaterThanOrEqual',
+                        ...binaryExpressionBase,
+                    } satisfies TNodeBinaryExpression;
+
+                    break;
+                }
+
                 case TOKEN_TYPES.equal: {
                     expression = {
                         type: 'binaryExpressionCompare',
@@ -358,6 +394,10 @@ class Parser {
                 return 1;
             }
 
+            case 'greater_than_or_equal':
+            case 'greater_than':
+            case 'less_than_or_equal':
+            case 'less_than':
             case 'hyphen':
             case 'equal':
             case 'plus': {
