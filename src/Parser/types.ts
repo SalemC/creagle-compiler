@@ -110,9 +110,16 @@ export interface INodeStatementIf {
     scope: INodeScope;
 }
 
+export interface INodeStatementWhile {
+    type: 'while';
+    expression: TNodeExpression;
+    scope: INodeScope;
+}
+
 export type TNodeStatement =
     | INodeStatementVariable
     | INodeStatementVariableReassignment
     | INodeStatementTerminate
     | INodeScope
-    | INodeStatementIf;
+    | INodeStatementIf
+    | INodeStatementWhile;

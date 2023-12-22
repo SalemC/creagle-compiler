@@ -8,6 +8,7 @@ $$
         \text{identifier} = [\text{Expression}]; \\
         \text{[Scope]} \\
         \text{if} \space ([\text{Expression}]) \space \text{[Scope]} \\
+        \text{while} \space ([\text{Expression}]) \space \text{[Scope]} \\
     \end{cases} \\
     [\text{Scope}] &\to \{\text{[Statement]}^*\} \\
     [\text{Type}] &\to

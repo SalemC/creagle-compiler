@@ -15,6 +15,7 @@ import {
     type INodeStatementTerminate,
     type INodeScope,
     type INodeStatementIf,
+    type INodeStatementWhile,
 } from './types';
 
 class Parser {
@@ -54,24 +55,28 @@ class Parser {
         switch (token.type) {
             case TOKEN_TYPES.if: {
                 this.consumeToken();
-
-                if (this.peek()?.type !== TOKEN_TYPES.openParenthesis) {
-                    throw new InvalidTokenError('(');
-                }
-
-                this.consumeToken();
+                this.consumeToken(TOKEN_TYPES.openParenthesis);
 
                 const expression = this.parseExpression();
 
-                if (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
-                    throw new InvalidTokenError(')');
-                }
-
-                this.consumeToken();
+                this.consumeToken(TOKEN_TYPES.closeParenthesis);
 
                 const scope = this.parseScope();
 
                 return { type: 'if', expression, scope } satisfies INodeStatementIf;
+            }
+
+            case TOKEN_TYPES.while: {
+                this.consumeToken();
+                this.consumeToken(TOKEN_TYPES.openParenthesis);
+
+                const expression = this.parseExpression();
+
+                this.consumeToken(TOKEN_TYPES.closeParenthesis);
+
+                const scope = this.parseScope();
+
+                return { type: 'while', expression, scope } satisfies INodeStatementWhile;
             }
 
             case TOKEN_TYPES.openCurlyBrace: {
@@ -85,20 +90,11 @@ class Parser {
 
             case TOKEN_TYPES.identifier: {
                 this.consumeToken();
-
-                if (this.peek()?.type !== TOKEN_TYPES.assignment) {
-                    throw new InvalidTokenError('=');
-                }
-
-                this.consumeToken();
+                this.consumeToken(TOKEN_TYPES.assignment);
 
                 const expression = this.parseExpression();
 
-                if (this.peek()?.type !== TOKEN_TYPES.semicolon) {
-                    throw new InvalidTokenError(';');
-                }
-
-                this.consumeToken();
+                this.consumeToken(TOKEN_TYPES.semicolon);
 
                 return {
                     type: 'variable-reassignment',
@@ -109,26 +105,12 @@ class Parser {
 
             case TOKEN_TYPES.terminate: {
                 this.consumeToken();
-
-                if (this.peek()?.type !== TOKEN_TYPES.openParenthesis) {
-                    throw new InvalidTokenError('(');
-                }
-
-                this.consumeToken();
+                this.consumeToken(TOKEN_TYPES.openParenthesis);
 
                 const expression = this.parseExpression();
 
-                if (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
-                    throw new InvalidTokenError(')');
-                }
-
-                this.consumeToken();
-
-                if (this.peek()?.type !== TOKEN_TYPES.semicolon) {
-                    throw new InvalidTokenError(';');
-                }
-
-                this.consumeToken();
+                this.consumeToken(TOKEN_TYPES.closeParenthesis);
+                this.consumeToken(TOKEN_TYPES.semicolon);
 
                 return { type: 'terminate', expression } satisfies INodeStatementTerminate;
             }
@@ -150,11 +132,7 @@ class Parser {
     }
 
     private parseScope(): INodeScope {
-        if (this.peek()?.type !== TOKEN_TYPES.openCurlyBrace) {
-            throw new InvalidTokenError('{');
-        }
-
-        this.consumeToken();
+        this.consumeToken(TOKEN_TYPES.openCurlyBrace);
 
         const statements: INodeScope['statements'] = [];
 
@@ -205,20 +183,11 @@ class Parser {
         }
 
         this.consumeToken();
-
-        if (this.peek()?.type !== TOKEN_TYPES.assignment) {
-            throw new InvalidTokenError('=');
-        }
-
-        this.consumeToken();
+        this.consumeToken(TOKEN_TYPES.assignment);
 
         const expression = this.parseExpression();
 
-        if (this.peek()?.type !== TOKEN_TYPES.semicolon) {
-            throw new InvalidTokenError(';');
-        }
-
-        this.consumeToken();
+        this.consumeToken(TOKEN_TYPES.semicolon);
 
         return {
             type: 'variable',
@@ -372,11 +341,7 @@ class Parser {
 
                 const expression = this.parseExpression();
 
-                if (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
-                    throw new InvalidTokenError(')');
-                }
-
-                this.consumeToken();
+                this.consumeToken(TOKEN_TYPES.closeParenthesis);
 
                 return { type: 'term', term: { type: 'parenthesised', expression } };
             }
@@ -425,7 +390,11 @@ class Parser {
         return tokenType in DATA_TYPES;
     }
 
-    private consumeToken(): void {
+    private consumeToken(expectedTokenType?: TTokenType): void {
+        if (expectedTokenType !== undefined && this.peek()?.type !== expectedTokenType) {
+            throw new InvalidTokenError(expectedTokenType);
+        }
+
         this.currentTokenPosition += 1;
     }
 

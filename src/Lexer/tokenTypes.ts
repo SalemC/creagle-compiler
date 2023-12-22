@@ -16,6 +16,7 @@ export const KEYWORDS = {
     if: 'if',
     else: 'else',
     terminate: 'terminate',
+    while: 'while',
 } as const;
 
 export const SYMBOLS = {

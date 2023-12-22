@@ -84,27 +84,27 @@ describe('Generator unit', () => {
     it('should append a multiply assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('mul rbx');
+        expect(getAssembly(generator)).not.toContain('imul rbx');
 
         // @ts-expect-error private method.
         generator.multiply('rbx');
 
         const assembly = getAssembly(generator).split('\n');
 
-        expect(assembly.at(0)).toEqual('    mul rbx');
+        expect(assembly.at(0)).toEqual('    imul rbx');
     });
 
     it('should append a divide assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('div rbx');
+        expect(getAssembly(generator)).not.toContain('idiv rbx');
 
         // @ts-expect-error private method.
         generator.divide('rbx');
 
         const assembly = getAssembly(generator).split('\n');
 
-        expect(assembly.at(0)).toEqual('    div rbx');
+        expect(assembly.at(0)).toEqual('    idiv rbx');
     });
 
     it('should append an indented assembly line to the underlying assembly', () => {
@@ -262,7 +262,7 @@ describe('Generator feature', () => {
             '    mov al, 8\n' +
             '    movsx rax, byte al\n' +
             '    pop rbx\n' +
-            '    mul bl\n' +
+            '    imul bl\n' +
             '    push rax\n' +
             '    mov rax, 60\n' +
             '    mov rdi, 0\n' +
@@ -302,7 +302,7 @@ describe('Generator feature', () => {
             '    mov al, 8\n' +
             '    movsx rax, byte al\n' +
             '    pop rbx\n' +
-            '    div bl\n' +
+            '    idiv bl\n' +
             '    push rax\n' +
             '    mov rax, 60\n' +
             '    mov rdi, 0\n' +
@@ -353,9 +353,9 @@ describe('Generator feature', () => {
             '    mov al, 2\n' +
             '    movsx rax, byte al\n' +
             '    pop rbx\n' +
-            '    div bl\n' +
+            '    idiv bl\n' +
             '    pop rbx\n' +
-            '    mul bl\n' +
+            '    imul bl\n' +
             '    push rax\n' +
             '    mov al, 4\n' +
             '    movsx rax, byte al\n' +

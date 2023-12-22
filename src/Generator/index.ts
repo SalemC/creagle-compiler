@@ -108,16 +108,39 @@ class Generator {
             }
 
             case 'if': {
-                const label = this.generateLabel('if');
+                const mainLabel = this.generateLabel('main');
 
                 this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
 
-                this.compare('qword [rsp]', '0');
-                this.jumpWhenZero(label);
+                // Pop the value into rax so it's not left on the stack.
+                this.pop('rax');
+                this.compare('rax', '0');
+                this.jumpWhenZero(mainLabel);
 
                 this.generateScope(statement.scope);
 
-                this.emit(`\n${label}:`, false);
+                this.emit(`\n${mainLabel}:`, false);
+
+                break;
+            }
+
+            case 'while': {
+                const whileLabelStart = this.generateLabel('while_start');
+                const mainLabel = this.generateLabel('main');
+
+                this.emit(`\n${whileLabelStart}:`, false);
+
+                this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
+
+                // Pop the value into rax so it's not left on the stack.
+                this.pop('rax');
+                this.compare('rax', '0');
+                this.jumpWhenZero(mainLabel);
+
+                this.generateScope(statement.scope);
+
+                this.jump(whileLabelStart);
+                this.emit(`\n${mainLabel}:`, false);
 
                 break;
             }
@@ -173,8 +196,9 @@ class Generator {
         ({
             binaryExpressionAdd: (): void => this.add(firstRegister, secondRegister),
             binaryExpressionSubtract: (): void => this.subtract(firstRegister, secondRegister),
-            binaryExpressionMultiply: (): void => this.multiply(secondRegister),
-            binaryExpressionDivide: (): void => this.divide(secondRegister),
+            binaryExpressionMultiply: (): void =>
+                this.multiply(secondRegister, dataTypeInfo.unsigned),
+            binaryExpressionDivide: (): void => this.divide(secondRegister, dataTypeInfo.unsigned),
             binaryExpressionCompare: (): void => {
                 this.compare(firstRegister, secondRegister);
                 this.setIfEqual('al');
@@ -437,6 +461,10 @@ class Generator {
         this.emit(`jz ${label}`);
     }
 
+    private jump(label: string): void {
+        this.emit(`jmp ${label}`);
+    }
+
     private compare(register: TRegister, value: TRegister): void {
         this.emit(`cmp ${register}, ${value}`);
     }
@@ -475,12 +503,16 @@ class Generator {
         this.emit(`sub ${register}, ${value}`);
     }
 
-    private multiply(register: TRegister): void {
-        this.emit(`mul ${register}`);
+    private multiply(register: TRegister, unsigned: boolean): void {
+        const instruction = unsigned ? 'mul' : 'imul';
+
+        this.emit(`${instruction} ${register}`);
     }
 
-    private divide(register: TRegister): void {
-        this.emit(`div ${register}`);
+    private divide(register: TRegister, unsigned: boolean): void {
+        const instruction = unsigned ? 'div' : 'idiv';
+
+        this.emit(`${instruction} ${register}`);
     }
 
     private emit(text: string, indent: boolean = true): void {
