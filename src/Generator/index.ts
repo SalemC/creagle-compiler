@@ -108,16 +108,39 @@ class Generator {
             }
 
             case 'if': {
-                const label = this.generateLabel('if');
+                const mainLabel = this.generateLabel('main');
 
                 this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
 
-                this.compare('qword [rsp]', '0');
-                this.jumpWhenZero(label);
+                // Pop the value into rax so it's not left on the stack.
+                this.pop('rax');
+                this.compare('rax', '0');
+                this.jumpWhenZero(mainLabel);
 
                 this.generateScope(statement.scope);
 
-                this.emit(`\n${label}:`, false);
+                this.emit(`\n${mainLabel}:`, false);
+
+                break;
+            }
+
+            case 'while': {
+                const whileLabelStart = this.generateLabel('while_start');
+                const mainLabel = this.generateLabel('main');
+
+                this.emit(`\n${whileLabelStart}:`, false);
+
+                this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
+
+                // Pop the value into rax so it's not left on the stack.
+                this.pop('rax');
+                this.compare('rax', '0');
+                this.jumpWhenZero(mainLabel);
+
+                this.generateScope(statement.scope);
+
+                this.jump(whileLabelStart);
+                this.emit(`\n${mainLabel}:`, false);
 
                 break;
             }
@@ -435,6 +458,10 @@ class Generator {
 
     private jumpWhenZero(label: string): void {
         this.emit(`jz ${label}`);
+    }
+
+    private jump(label: string): void {
+        this.emit(`jmp ${label}`);
     }
 
     private compare(register: TRegister, value: TRegister): void {

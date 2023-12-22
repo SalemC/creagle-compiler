@@ -1,0 +1,7 @@
+mutable unsigned byte variable = 20;
+
+while (variable) {
+    variable = variable - 1;
+}
+
+terminate(variable);
