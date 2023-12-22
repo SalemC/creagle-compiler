@@ -196,8 +196,9 @@ class Generator {
         ({
             binaryExpressionAdd: (): void => this.add(firstRegister, secondRegister),
             binaryExpressionSubtract: (): void => this.subtract(firstRegister, secondRegister),
-            binaryExpressionMultiply: (): void => this.multiply(secondRegister),
-            binaryExpressionDivide: (): void => this.divide(secondRegister),
+            binaryExpressionMultiply: (): void =>
+                this.multiply(secondRegister, dataTypeInfo.unsigned),
+            binaryExpressionDivide: (): void => this.divide(secondRegister, dataTypeInfo.unsigned),
             binaryExpressionCompare: (): void => {
                 this.compare(firstRegister, secondRegister);
                 this.setIfEqual('al');
@@ -502,12 +503,16 @@ class Generator {
         this.emit(`sub ${register}, ${value}`);
     }
 
-    private multiply(register: TRegister): void {
-        this.emit(`mul ${register}`);
+    private multiply(register: TRegister, unsigned: boolean): void {
+        const instruction = unsigned ? 'mul' : 'imul';
+
+        this.emit(`${instruction} ${register}`);
     }
 
-    private divide(register: TRegister): void {
-        this.emit(`div ${register}`);
+    private divide(register: TRegister, unsigned: boolean): void {
+        const instruction = unsigned ? 'div' : 'idiv';
+
+        this.emit(`${instruction} ${register}`);
     }
 
     private emit(text: string, indent: boolean = true): void {
