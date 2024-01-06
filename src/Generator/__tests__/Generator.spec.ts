@@ -3,6 +3,9 @@ import { Generator } from '..';
 // @ts-expect-error private property.
 const getAssembly = (generator: Generator): string => generator.assembly;
 
+const convertInstructionArrayToString = (instructions: string[]): string =>
+    instructions.reduce((accumulator, instruction) => `${accumulator}\n    ${instruction}`, '');
+
 describe('Generator unit', () => {
     it('should append a push assembly line to the underlying assembly', () => {
         const generator = new Generator();
@@ -173,20 +176,26 @@ describe('Generator feature', () => {
             },
         ]);
 
+        const expectedInstructions = [
+            'mov al, 2',
+            'movsx rax, byte al',
+            'push rax',
+            'mov al, 8',
+            'movsx rax, byte al',
+            'push rax',
+            'pop rax',
+            'pop rcx',
+            'add al, cl',
+            'push rax',
+            'mov rax, 60',
+            'mov rdi, 0',
+            'syscall',
+        ];
+
         const expectedAssembly =
-            'global _start\n\n' +
-            '_start:\n' +
-            '    mov al, 2\n' +
-            '    movsx rax, byte al\n' +
-            '    push rax\n' +
-            '    mov al, 8\n' +
-            '    movsx rax, byte al\n' +
-            '    pop rbx\n' +
-            '    add al, bl\n' +
-            '    push rax\n' +
-            '    mov rax, 60\n' +
-            '    mov rdi, 0\n' +
-            '    syscall\n';
+            'global _start\n\n_start:' +
+            convertInstructionArrayToString(expectedInstructions) +
+            '\n';
 
         expect(assembly).toEqual(expectedAssembly);
     });
@@ -213,20 +222,26 @@ describe('Generator feature', () => {
             },
         ]);
 
+        const expectedInstructions = [
+            'mov al, 2',
+            'movsx rax, byte al',
+            'push rax',
+            'mov al, 8',
+            'movsx rax, byte al',
+            'push rax',
+            'pop rax',
+            'pop rcx',
+            'sub al, cl',
+            'push rax',
+            'mov rax, 60',
+            'mov rdi, 0',
+            'syscall',
+        ];
+
         const expectedAssembly =
-            'global _start\n\n' +
-            '_start:\n' +
-            '    mov al, 2\n' +
-            '    movsx rax, byte al\n' +
-            '    push rax\n' +
-            '    mov al, 8\n' +
-            '    movsx rax, byte al\n' +
-            '    pop rbx\n' +
-            '    sub al, bl\n' +
-            '    push rax\n' +
-            '    mov rax, 60\n' +
-            '    mov rdi, 0\n' +
-            '    syscall\n';
+            'global _start\n\n_start:' +
+            convertInstructionArrayToString(expectedInstructions) +
+            '\n';
 
         expect(assembly).toEqual(expectedAssembly);
     });
@@ -253,20 +268,26 @@ describe('Generator feature', () => {
             },
         ]);
 
+        const expectedInstructions = [
+            'mov al, 2',
+            'movsx rax, byte al',
+            'push rax',
+            'mov al, 8',
+            'movsx rax, byte al',
+            'push rax',
+            'pop rax',
+            'pop rcx',
+            'imul cl',
+            'push rax',
+            'mov rax, 60',
+            'mov rdi, 0',
+            'syscall',
+        ];
+
         const expectedAssembly =
-            'global _start\n\n' +
-            '_start:\n' +
-            '    mov al, 2\n' +
-            '    movsx rax, byte al\n' +
-            '    push rax\n' +
-            '    mov al, 8\n' +
-            '    movsx rax, byte al\n' +
-            '    pop rbx\n' +
-            '    imul bl\n' +
-            '    push rax\n' +
-            '    mov rax, 60\n' +
-            '    mov rdi, 0\n' +
-            '    syscall\n';
+            'global _start\n\n_start:' +
+            convertInstructionArrayToString(expectedInstructions) +
+            '\n';
 
         expect(assembly).toEqual(expectedAssembly);
     });
@@ -293,20 +314,26 @@ describe('Generator feature', () => {
             },
         ]);
 
+        const expectedInstructions = [
+            'mov al, 2',
+            'movsx rax, byte al',
+            'push rax',
+            'mov al, 8',
+            'movsx rax, byte al',
+            'push rax',
+            'pop rax',
+            'pop rcx',
+            'idiv cl',
+            'push rax',
+            'mov rax, 60',
+            'mov rdi, 0',
+            'syscall',
+        ];
+
         const expectedAssembly =
-            'global _start\n\n' +
-            '_start:\n' +
-            '    mov al, 2\n' +
-            '    movsx rax, byte al\n' +
-            '    push rax\n' +
-            '    mov al, 8\n' +
-            '    movsx rax, byte al\n' +
-            '    pop rbx\n' +
-            '    idiv bl\n' +
-            '    push rax\n' +
-            '    mov rax, 60\n' +
-            '    mov rdi, 0\n' +
-            '    syscall\n';
+            'global _start\n\n_start:' +
+            convertInstructionArrayToString(expectedInstructions) +
+            '\n';
 
         expect(assembly).toEqual(expectedAssembly);
     });
@@ -341,30 +368,40 @@ describe('Generator feature', () => {
             },
         ]);
 
+        const expectedInstructions = [
+            'mov al, 3',
+            'movsx rax, byte al',
+            'push rax',
+            'mov al, 1',
+            'movsx rax, byte al',
+            'push rax',
+            'mov al, 2',
+            'movsx rax, byte al',
+            'push rax',
+            'pop rax',
+            'pop rcx',
+            'idiv cl',
+            'push rax',
+            'pop rax',
+            'pop rcx',
+            'imul cl',
+            'push rax',
+            'mov al, 4',
+            'movsx rax, byte al',
+            'push rax',
+            'pop rax',
+            'pop rcx',
+            'add al, cl',
+            'push rax',
+            'mov rax, 60',
+            'mov rdi, 0',
+            'syscall',
+        ];
+
         const expectedAssembly =
-            'global _start\n\n' +
-            '_start:\n' +
-            '    mov al, 3\n' +
-            '    movsx rax, byte al\n' +
-            '    push rax\n' +
-            '    mov al, 1\n' +
-            '    movsx rax, byte al\n' +
-            '    push rax\n' +
-            '    mov al, 2\n' +
-            '    movsx rax, byte al\n' +
-            '    pop rbx\n' +
-            '    idiv bl\n' +
-            '    pop rbx\n' +
-            '    imul bl\n' +
-            '    push rax\n' +
-            '    mov al, 4\n' +
-            '    movsx rax, byte al\n' +
-            '    pop rbx\n' +
-            '    add al, bl\n' +
-            '    push rax\n' +
-            '    mov rax, 60\n' +
-            '    mov rdi, 0\n' +
-            '    syscall\n';
+            'global _start\n\n_start:' +
+            convertInstructionArrayToString(expectedInstructions) +
+            '\n';
 
         expect(assembly).toEqual(expectedAssembly);
     });

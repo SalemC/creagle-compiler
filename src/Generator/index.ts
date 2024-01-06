@@ -30,7 +30,7 @@ class Generator {
         this.move('rdi', '0');
         this.emit('syscall');
 
-        return this.optimise();
+        return this.assembly;
     }
 
     private generateStatement(statement: TNodeStatement): void {
@@ -406,11 +406,6 @@ class Generator {
         }[dataTypeInfo.type];
 
         return wrapInteger(BigInt(min), BigInt(literal), BigInt(max));
-    }
-
-    private optimise(): string {
-        // Remove any sequential push and pops, the value will already be in the register.
-        return this.assembly.replaceAll(/\n^ *push (\w+)\n^ *pop \1/gm, '');
     }
 
     private generateLabel(prefix?: string): string {
