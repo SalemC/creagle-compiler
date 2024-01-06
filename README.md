@@ -7,6 +7,7 @@ Table of Contents
 -   [Introduction](#introduction)
 -   [Features](#features)
 -   [Structure](#structure)
+-   [Usage](#usage)
 -   [Contributing](#contributing)
 -   [License](#license)
 
@@ -31,6 +32,30 @@ The project structure is organised as follows:
     -   `Generator/index.ts`: Implements the generator for generating x86-64 Linux assembly code.
     -   `main.ts`: Entry point for the compiler.
 -   `examples/`: Includes sample source code files written in the custom language.
+
+## Usage
+
+### 1. Clone the Repository
+
+Clone the repository to your local machine using the following command:
+
+`git clone https://github.com/SalemC/creagle-compiler`
+
+### 2. Navigate to the Project Directory
+
+`cd creagle-compiler`
+
+### 3. Install Dependencies
+
+`npm install`
+
+### 4. Build the Project
+
+`npm run build`
+
+### 5. Run the Project
+
+`npm run run ./relative/path/to/your/creagle/file`
 
 ## Contributing
 
