@@ -185,13 +185,13 @@ class Generator {
         this.generateExpression(dataTypeInfo, expression.lhs);
 
         const fullFirstRegister = 'rax';
-        const fullSecondRegister = 'rbx';
+        const fullSecondRegister = 'rcx';
 
         this.pop(fullFirstRegister);
         this.pop(fullSecondRegister);
 
         const firstRegister = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
-        const secondRegister = this.getRegisterFromDataType(dataTypeInfo.type, 'b');
+        const secondRegister = this.getRegisterFromDataType(dataTypeInfo.type, 'c');
 
         ({
             binaryExpressionAdd: (): void => this.add(firstRegister, secondRegister),
