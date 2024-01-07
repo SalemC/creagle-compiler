@@ -116,10 +116,25 @@ export interface INodeStatementWhile {
     scope: INodeScope;
 }
 
+export interface INodeStatementFunction {
+    type: 'function';
+    dataType: TDataType;
+    identifier: IToken;
+    unsigned: boolean;
+    scope: INodeScope;
+}
+
+export interface INodeStatementReturn {
+    type: 'return';
+    expression: TNodeExpression;
+}
+
 export type TNodeStatement =
     | INodeStatementVariable
     | INodeStatementVariableReassignment
     | INodeStatementTerminate
     | INodeScope
     | INodeStatementIf
-    | INodeStatementWhile;
+    | INodeStatementWhile
+    | INodeStatementFunction
+    | INodeStatementReturn;

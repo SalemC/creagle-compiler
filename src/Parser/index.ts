@@ -16,6 +16,8 @@ import {
     type INodeScope,
     type INodeStatementIf,
     type INodeStatementWhile,
+    type INodeStatementFunction,
+    type INodeStatementReturn,
 } from './types';
 
 class Parser {
@@ -24,8 +26,6 @@ class Parser {
     private readonly tokens: IToken[] = [];
 
     public parseTokens(tokens: readonly IToken[]): TNodeStatement[] {
-        this.reset();
-
         // Copy all the original tokens into our list of tokens to avoid modifying the original array.
         this.tokens.push(...tokens);
 
@@ -83,7 +83,13 @@ class Parser {
                 return this.parseScope();
             }
 
-            case TOKEN_TYPES.unsigned:
+            case TOKEN_TYPES.unsigned: {
+                // Skip the data type and the identifier, go straight for the succeeding token; if it's an open parenthesis, we're parsing a function.
+                const isFunction = this.peek(3)?.type === 'open_parenthesis';
+
+                return isFunction ? this.parseFunction() : this.parseVariable();
+            }
+
             case TOKEN_TYPES.mutable: {
                 return this.parseVariable();
             }
@@ -115,6 +121,16 @@ class Parser {
                 return { type: 'terminate', expression } satisfies INodeStatementTerminate;
             }
 
+            case TOKEN_TYPES.return: {
+                this.consumeToken();
+
+                const expression = this.parseExpression();
+
+                this.consumeToken(TOKEN_TYPES.semicolon);
+
+                return { type: 'return', expression } satisfies INodeStatementReturn;
+            }
+
             case TOKEN_TYPES.eof: {
                 this.consumeToken();
 
@@ -123,7 +139,10 @@ class Parser {
 
             default: {
                 if (this.isTokenOfDataType(token.type)) {
-                    return this.parseVariable();
+                    // Skip the identifier, go straight for the succeeding token; if it's an open parenthesis, we're parsing a function.
+                    const isFunction = this.peek(2)?.type === 'open_parenthesis';
+
+                    return isFunction ? this.parseFunction() : this.parseVariable();
                 }
 
                 throw new InvalidTokenError();
@@ -136,6 +155,8 @@ class Parser {
 
         const statements: INodeScope['statements'] = [];
 
+        let hasReturned = false;
+
         while (this.peek() !== null && this.peek()?.type !== TOKEN_TYPES.closeCurlyBrace) {
             const statement = this.parseStatement();
 
@@ -144,12 +165,59 @@ class Parser {
                 throw new InvalidTokenError('}');
             }
 
-            statements.push(statement);
+            if (!hasReturned) {
+                statements.push(statement);
+            }
+
+            // If we come across a return statement, that's the end of the scope.
+            // Even if there's code after the statement, nothing should happen.
+            // We'll continue running this loop to ensure the scope conforms to the grammar,
+            // but we'll essentially skip the succeeding tokens.
+            hasReturned ||= statement.type === 'return';
+        }
+
+        this.consumeToken(TOKEN_TYPES.closeCurlyBrace);
+
+        return { type: 'scope', statements } satisfies INodeScope;
+    }
+
+    private parseFunction(): INodeStatementFunction {
+        let unsigned = false;
+
+        if (this.peek()?.type === TOKEN_TYPES.unsigned) {
+            this.consumeToken();
+
+            unsigned = true;
+        }
+
+        const dataType = this.peek()?.type ?? null;
+
+        if (dataType === null || !this.isTokenOfDataType(dataType)) {
+            throw new InvalidTokenError();
         }
 
         this.consumeToken();
 
-        return { type: 'scope', statements } satisfies INodeScope;
+        const identifier = this.peek();
+
+        if (identifier?.type !== TOKEN_TYPES.identifier) {
+            throw new InvalidIdentifierError();
+        }
+
+        this.consumeToken();
+        this.consumeToken(TOKEN_TYPES.openParenthesis);
+        // @todo parse arguments here
+        this.consumeToken(TOKEN_TYPES.closeParenthesis);
+
+        const scope = this.parseScope();
+
+        return {
+            type: 'function',
+            dataType: this.convertDataTypeSpecifierToDataType(dataType),
+            identifier,
+            unsigned,
+            scope,
+        } satisfies INodeStatementFunction;
     }
 
     private parseVariable(): INodeStatementVariable {
@@ -400,10 +468,6 @@ class Parser {
 
     private peek(offset: number = 0): IToken | null {
         return this.tokens.at(this.currentTokenPosition + offset) ?? null;
-    }
-
-    private reset(): void {
-        this.tokens.length = 0;
     }
 }
 

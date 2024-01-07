@@ -1,8 +1,14 @@
-import { type IVariable, type TRegister, type IScope, type IDataTypeInfo } from './types';
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
 import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { wrapInteger } from './helpers/wrapInteger';
+import {
+    type IVariable,
+    type TRegister,
+    type IScope,
+    type IDataTypeInfo,
+    type TAssemblyStreamNames,
+} from './types';
 import {
     type INodeExpressionTerm,
     type TNodeExpression,
@@ -13,16 +19,15 @@ import {
 
 class Generator {
     private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {} }];
+    private assemblyOutputStreamName: keyof TAssemblyStreamNames = 'main';
     private stackSizeBytes: number = 0;
     private labelCount: number = 0;
-    private assembly: string = '';
+    private readonly assembly: TAssemblyStreamNames = {
+        main: '',
+        functions: '',
+    };
 
     public generateAssembly(statements: readonly TNodeStatement[]): string {
-        this.reset();
-
-        this.emit('global _start\n', false);
-        this.emit('_start:', false);
-
         statements.forEach(this.generateStatement.bind(this));
 
         // Add an initial syscall to ensure the program always exits.
@@ -30,7 +35,7 @@ class Generator {
         this.move('rdi', '0');
         this.emit('syscall');
 
-        return this.assembly;
+        return `global _start\n${this.assembly.functions}\n_start:\n${this.assembly.main}`;
     }
 
     private generateStatement(statement: TNodeStatement): void {
@@ -124,6 +129,48 @@ class Generator {
                 break;
             }
 
+            case 'function': {
+                this.assemblyOutputStreamName = 'functions';
+
+                const functionLabel = this.generateLabel(statement.identifier.literal);
+
+                this.emit(`\n${functionLabel}:`, false);
+
+                this.generateScope(statement.scope, {
+                    type: statement.dataType,
+                    unsigned: statement.unsigned,
+                });
+
+                // It's the scope's responsibility to put the return value in the correct register
+                // before we return due to the potential need to deallocate the scope.
+                this.return();
+
+                this.assemblyOutputStreamName = 'main';
+
+                break;
+            }
+
+            case 'return': {
+                const { returnType } = this.getCurrentScope();
+
+                if (returnType === undefined) {
+                    throw new Error(
+                        'The `return` keyword can only be used within the body of a function.',
+                    );
+                }
+
+                this.generateExpression(returnType, statement.expression);
+
+                this.pop('rax');
+
+                // We don't use the return keyword here because we can assert we're inside a function's scope.
+                // Since that's the case, our function body may have allocated variables on the stack
+                // and we will need to deallocate them before returning.
+                // The responsibility of this is delegated to the function statement generator.
+
+                break;
+            }
+
             case 'while': {
                 const whileLabelStart = this.generateLabel('while_start');
                 const mainLabel = this.generateLabel('main');
@@ -161,8 +208,8 @@ class Generator {
         }
     }
 
-    private generateScope(scope: INodeScope): void {
-        this.scopes.push({ sizeBytes: 0, variables: {} });
+    private generateScope(scope: INodeScope, dataTypeInfo?: IDataTypeInfo): void {
+        this.scopes.push({ sizeBytes: 0, variables: {}, returnType: dataTypeInfo });
 
         scope.statements.forEach(this.generateStatement.bind(this));
 
@@ -445,6 +492,10 @@ class Generator {
         this.stackSizeBytes += 8;
     }
 
+    private return(): void {
+        this.emit('ret');
+    }
+
     private pop(destinationRegister: TRegister): void {
         this.emit(`pop ${destinationRegister}`);
 
@@ -511,11 +562,7 @@ class Generator {
     }
 
     private emit(text: string, indent: boolean = true): void {
-        this.assembly += `${indent ? '    ' : ''}${text}\n`;
-    }
-
-    private reset(): void {
-        this.assembly = '';
+        this.assembly[this.assemblyOutputStreamName] += `${indent ? '    ' : ''}${text}\n`;
     }
 }
 

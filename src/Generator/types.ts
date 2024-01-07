@@ -13,7 +13,10 @@ export interface IVariable extends IDataTypeInfo {
 export interface IScope {
     sizeBytes: number;
     variables: Record<string, IVariable>;
+    returnType?: IDataTypeInfo;
 }
+
+export type TAssemblyStreamNames = Record<'main' | 'functions', string>;
 
 export type TRegister =
     | 'rax'
