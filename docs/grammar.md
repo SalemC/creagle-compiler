@@ -41,6 +41,7 @@ $$
     \begin{cases}
         [\text{IntegerLiteral}] \\
         \text{identifier} \\
+        \text{identifier()} \\
         ([\text{Expression}]) \\
     \end{cases} \\
     [\text{IntegerLiteral}] &\to \{1,2,3,\ldots,\infty\} \\

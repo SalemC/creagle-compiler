@@ -10,9 +10,15 @@ export interface IVariable extends IDataTypeInfo {
     mutable: boolean;
 }
 
+export interface IFunction {
+    label: string;
+    returnType: IDataTypeInfo;
+}
+
 export interface IScope {
     sizeBytes: number;
     variables: Record<string, IVariable>;
+    functions: Record<string, IFunction>;
     returnType?: IDataTypeInfo;
 }
 

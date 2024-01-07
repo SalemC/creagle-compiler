@@ -1,18 +1,23 @@
 import { type IToken } from '../Lexer/types';
 
-interface INodeExpressionTermIdentifier {
-    literal: IToken['literal'];
+export interface INodeExpressionTermIdentifier {
     type: 'identifier';
-}
-
-interface INodeExpressionTermIntegerLiteral {
     literal: IToken['literal'];
-    type: 'integer';
 }
 
-interface INodeExpressionTermParenthesised {
+export interface INodeExpressionTermIntegerLiteral {
+    type: 'integer';
+    literal: IToken['literal'];
+}
+
+export interface INodeExpressionTermParenthesised {
     type: 'parenthesised';
     expression: TNodeExpression;
+}
+
+export interface INodeExpressionTermFunctionCall {
+    type: 'function_call';
+    literal: IToken['literal'];
 }
 
 export interface INodeExpressionTerm {
@@ -20,7 +25,8 @@ export interface INodeExpressionTerm {
     term:
         | INodeExpressionTermIntegerLiteral
         | INodeExpressionTermIdentifier
-        | INodeExpressionTermParenthesised;
+        | INodeExpressionTermParenthesised
+        | INodeExpressionTermFunctionCall;
 }
 
 interface INodeBinaryExpressionBase {

@@ -18,6 +18,10 @@ import {
     type INodeStatementWhile,
     type INodeStatementFunction,
     type INodeStatementReturn,
+    type INodeExpressionTermIntegerLiteral,
+    type INodeExpressionTermIdentifier,
+    type INodeExpressionTermParenthesised,
+    type INodeExpressionTermFunctionCall,
 } from './types';
 
 class Parser {
@@ -165,6 +169,7 @@ class Parser {
                 throw new InvalidTokenError('}');
             }
 
+            // @FIXME bug here with nested scopes
             if (!hasReturned) {
                 statements.push(statement);
             }
@@ -395,13 +400,39 @@ class Parser {
             case TOKEN_TYPES.integer: {
                 this.consumeToken();
 
-                return { type: 'term', term: { type: 'integer', literal: token.literal } };
+                return {
+                    type: 'term',
+                    term: {
+                        type: 'integer',
+                        literal: token.literal,
+                    } satisfies INodeExpressionTermIntegerLiteral,
+                };
             }
 
             case TOKEN_TYPES.identifier: {
                 this.consumeToken();
 
-                return { type: 'term', term: { type: 'identifier', literal: token.literal } };
+                if (this.peek()?.type === TOKEN_TYPES.openParenthesis) {
+                    this.consumeToken();
+                    // @todo handle args
+                    this.consumeToken(TOKEN_TYPES.closeParenthesis);
+
+                    return {
+                        type: 'term',
+                        term: {
+                            type: 'function_call',
+                            literal: token.literal,
+                        } satisfies INodeExpressionTermFunctionCall,
+                    };
+                }
+
+                return {
+                    type: 'term',
+                    term: {
+                        type: 'identifier',
+                        literal: token.literal,
+                    } satisfies INodeExpressionTermIdentifier,
+                };
             }
 
             case TOKEN_TYPES.openParenthesis: {
@@ -411,7 +442,13 @@ class Parser {
 
                 this.consumeToken(TOKEN_TYPES.closeParenthesis);
 
-                return { type: 'term', term: { type: 'parenthesised', expression } };
+                return {
+                    type: 'term',
+                    term: {
+                        type: 'parenthesised',
+                        expression,
+                    } satisfies INodeExpressionTermParenthesised,
+                };
             }
 
             default: {

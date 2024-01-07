@@ -8,6 +8,7 @@ import {
     type IScope,
     type IDataTypeInfo,
     type TAssemblyStreamNames,
+    type IFunction,
 } from './types';
 import {
     type INodeExpressionTerm,
@@ -16,9 +17,10 @@ import {
     type TNodeBinaryExpression,
     type INodeScope,
 } from '../Parser/types';
+import { UndeclaredFunctionError } from './errors/UndeclaredFunctionError';
 
 class Generator {
-    private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {} }];
+    private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {}, functions: {} }];
     private assemblyOutputStreamName: keyof TAssemblyStreamNames = 'main';
     private stackSizeBytes: number = 0;
     private labelCount: number = 0;
@@ -132,14 +134,27 @@ class Generator {
             case 'function': {
                 this.assemblyOutputStreamName = 'functions';
 
-                const functionLabel = this.generateLabel(statement.identifier.literal);
+                const identifier = statement.identifier.literal;
 
-                this.emit(`\n${functionLabel}:`, false);
+                if (this.getFunction(identifier) !== null) {
+                    throw new IdentifierRedeclarationError(identifier);
+                }
 
-                this.generateScope(statement.scope, {
+                const returnType = {
                     type: statement.dataType,
                     unsigned: statement.unsigned,
-                });
+                };
+
+                const label = this.generateLabel(identifier);
+
+                this.getCurrentScope().functions[identifier] = {
+                    label,
+                    returnType,
+                };
+
+                this.emit(`\n${label}:`, false);
+
+                this.generateScope(statement.scope, returnType);
 
                 // It's the scope's responsibility to put the return value in the correct register
                 // before we return due to the potential need to deallocate the scope.
@@ -155,7 +170,7 @@ class Generator {
 
                 if (returnType === undefined) {
                     throw new Error(
-                        'The `return` keyword can only be used within the body of a function.',
+                        "The 'return' keyword can only be used within the body of a function.",
                     );
                 }
 
@@ -209,7 +224,7 @@ class Generator {
     }
 
     private generateScope(scope: INodeScope, dataTypeInfo?: IDataTypeInfo): void {
-        this.scopes.push({ sizeBytes: 0, variables: {}, returnType: dataTypeInfo });
+        this.scopes.push({ sizeBytes: 0, variables: {}, functions: {}, returnType: dataTypeInfo });
 
         scope.statements.forEach(this.generateStatement.bind(this));
 
@@ -368,6 +383,21 @@ class Generator {
                 break;
             }
 
+            case 'function_call': {
+                const identifier = term.literal;
+
+                const functionDefinition = this.getFunction(identifier);
+
+                if (functionDefinition === null) {
+                    throw new UndeclaredFunctionError(identifier);
+                }
+
+                this.call(functionDefinition.label);
+                this.push('rax');
+
+                break;
+            }
+
             case 'parenthesised': {
                 this.generateExpression(dataTypeInfo, term.expression);
 
@@ -391,6 +421,7 @@ class Generator {
         const newScope: IScope = {
             sizeBytes: 0,
             variables: {},
+            functions: {},
         };
 
         this.scopes.push(newScope);
@@ -409,6 +440,24 @@ class Generator {
 
             if (scope !== null && identifier in scope.variables) {
                 return scope.variables[identifier] ?? null;
+            }
+        }
+
+        return null;
+    }
+
+    // @todo merge with getVariable
+    private getFunction(identifier: string): IFunction | null {
+        if (this.scopes.length === 0) {
+            return null;
+        }
+
+        // Search through the current and the parent scopes for the function.
+        for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
+            const scope = this.scopes.at(i) ?? null;
+
+            if (scope !== null && identifier in scope.functions) {
+                return scope.functions[identifier] ?? null;
             }
         }
 
@@ -490,6 +539,10 @@ class Generator {
 
         this.getCurrentScope().sizeBytes += 8;
         this.stackSizeBytes += 8;
+    }
+
+    private call(functionLabel: string): void {
+        this.emit(`call ${functionLabel}`);
     }
 
     private return(): void {
