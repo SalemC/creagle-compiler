@@ -10,8 +10,6 @@ class Lexer {
     private text: string = '';
 
     public convertToTokens(text: string): IToken[] {
-        this.reset();
-
         this.text = text;
 
         return this.readTokens();
@@ -267,12 +265,6 @@ class Lexer {
         const position = this.cursorPosition + offset;
 
         return position > this.text.length ? '\0' : this.text.charAt(position);
-    }
-
-    private reset(): void {
-        this.text = '';
-        this.tokens.length = 0;
-        this.cursorPosition = 0;
     }
 }
 
