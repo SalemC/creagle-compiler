@@ -450,39 +450,27 @@ class Generator {
 
     private getCurrentScope(): IScope {
         // There will always be at least one scope.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.scopes.at(-1)!;
+        return this.scopes.at(-1)!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
     }
 
     private getVariable(identifier: string): IVariable | null {
-        if (this.scopes.length === 0) {
-            return null;
-        }
+        const scope = this.searchForScope((scope) => identifier in scope.variables);
 
-        // Search through the current and the parent scopes for the variable.
-        for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
-            const scope = this.scopes.at(i) ?? null;
-
-            if (scope !== null && identifier in scope.variables) {
-                return scope.variables[identifier] ?? null;
-            }
-        }
-
-        return null;
+        return scope?.variables[identifier] ?? null;
     }
 
-    // @todo merge with getVariable
     private getFunction(identifier: string): IFunction | null {
-        if (this.scopes.length === 0) {
-            return null;
-        }
+        const scope = this.searchForScope((scope) => identifier in scope.functions);
 
-        // Search through the current and the parent scopes for the function.
+        return scope?.functions[identifier] ?? null;
+    }
+
+    private searchForScope(predicate: (scope: IScope) => boolean): IScope | null {
         for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
-            const scope = this.scopes.at(i) ?? null;
+            const scope = this.scopes.at(i)!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
-            if (scope !== null && identifier in scope.functions) {
-                return scope.functions[identifier] ?? null;
+            if (predicate(scope)) {
+                return scope;
             }
         }
 
