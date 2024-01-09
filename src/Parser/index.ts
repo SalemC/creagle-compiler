@@ -99,6 +99,14 @@ class Parser {
             }
 
             case TOKEN_TYPES.identifier: {
+                if (this.peek(1)?.type !== TOKEN_TYPES.assignment) {
+                    const term = this.parseTerm();
+
+                    this.consumeToken(TOKEN_TYPES.semicolon);
+
+                    return term;
+                }
+
                 this.consumeToken();
                 this.consumeToken(TOKEN_TYPES.assignment);
 
@@ -149,6 +157,16 @@ class Parser {
                     return isFunction ? this.parseFunction() : this.parseVariable();
                 }
 
+                try {
+                    const term = this.parseTerm();
+
+                    this.consumeToken(TOKEN_TYPES.semicolon);
+
+                    return term;
+                } catch {
+                    // If it's not a valid term, we'll let this fall through and continue execution.
+                }
+
                 throw new InvalidTokenError();
             }
         }
@@ -159,8 +177,6 @@ class Parser {
 
         const statements: INodeScope['statements'] = [];
 
-        let hasReturned = false;
-
         while (this.peek() !== null && this.peek()?.type !== TOKEN_TYPES.closeCurlyBrace) {
             const statement = this.parseStatement();
 
@@ -169,16 +185,7 @@ class Parser {
                 throw new InvalidTokenError('}');
             }
 
-            // @FIXME bug here with nested scopes
-            if (!hasReturned) {
-                statements.push(statement);
-            }
-
-            // If we come across a return statement, that's the end of the scope.
-            // Even if there's code after the statement, nothing should happen.
-            // We'll continue running this loop to ensure the scope conforms to the grammar,
-            // but we'll essentially skip the succeeding tokens.
-            hasReturned ||= statement.type === 'return';
+            statements.push(statement);
         }
 
         this.consumeToken(TOKEN_TYPES.closeCurlyBrace);

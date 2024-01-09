@@ -29,57 +29,36 @@ export interface INodeExpressionTerm {
         | INodeExpressionTermFunctionCall;
 }
 
-interface INodeBinaryExpressionBase {
+interface INodeBinaryExpression<T extends string> {
+    type: T;
     lhs: TNodeExpression;
     rhs: TNodeExpression;
 }
 
-interface INodeBinaryExpressionAdd extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionAdd';
-}
+type TNodeBinaryExpressionAdd = INodeBinaryExpression<'binaryExpressionAdd'>;
+type TNodeBinaryExpressionSubtract = INodeBinaryExpression<'binaryExpressionSubtract'>;
+type TNodeBinaryExpressionMultiply = INodeBinaryExpression<'binaryExpressionMultiply'>;
+type TNodeBinaryExpressionDivide = INodeBinaryExpression<'binaryExpressionDivide'>;
+type TNodeBinaryExpressionCompare = INodeBinaryExpression<'binaryExpressionCompare'>;
 
-interface INodeBinaryExpressionSubtract extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionSubtract';
-}
+type TNodeBinaryExpressionGreaterThan = INodeBinaryExpression<'binaryExpressionGreaterThan'>;
+type TNodeBinaryExpressionGreaterThanOrEqual =
+    INodeBinaryExpression<'binaryExpressionGreaterThanOrEqual'>;
 
-interface INodeBinaryExpressionMultiply extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionMultiply';
-}
-
-interface INodeBinaryExpressionDivide extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionDivide';
-}
-
-interface INodeBinaryExpressionCompare extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionCompare';
-}
-
-interface INodeBinaryExpressionGreaterThan extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionGreaterThan';
-}
-
-interface INodeBinaryExpressionGreaterThanOrEqual extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionGreaterThanOrEqual';
-}
-
-interface INodeBinaryExpressionLessThan extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionLessThan';
-}
-
-interface INodeBinaryExpressionLessThanOrEqual extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionLessThanOrEqual';
-}
+type TNodeBinaryExpressionLessThan = INodeBinaryExpression<'binaryExpressionLessThan'>;
+type TNodeBinaryExpressionLessThanOrEqual =
+    INodeBinaryExpression<'binaryExpressionLessThanOrEqual'>;
 
 export type TNodeBinaryExpression =
-    | INodeBinaryExpressionDivide
-    | INodeBinaryExpressionMultiply
-    | INodeBinaryExpressionAdd
-    | INodeBinaryExpressionSubtract
-    | INodeBinaryExpressionCompare
-    | INodeBinaryExpressionGreaterThan
-    | INodeBinaryExpressionGreaterThanOrEqual
-    | INodeBinaryExpressionLessThan
-    | INodeBinaryExpressionLessThanOrEqual;
+    | TNodeBinaryExpressionDivide
+    | TNodeBinaryExpressionMultiply
+    | TNodeBinaryExpressionAdd
+    | TNodeBinaryExpressionSubtract
+    | TNodeBinaryExpressionCompare
+    | TNodeBinaryExpressionGreaterThan
+    | TNodeBinaryExpressionGreaterThanOrEqual
+    | TNodeBinaryExpressionLessThan
+    | TNodeBinaryExpressionLessThanOrEqual;
 
 export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 
@@ -143,4 +122,5 @@ export type TNodeStatement =
     | INodeStatementIf
     | INodeStatementWhile
     | INodeStatementFunction
-    | INodeStatementReturn;
+    | INodeStatementReturn
+    | INodeExpressionTerm;

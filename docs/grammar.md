@@ -11,6 +11,7 @@ $$
         \text{if} \space ([\text{Expression}]) \space [\text{Scope}] \\
         \text{while} \space ([\text{Expression}]) \space [\text{Scope}] \\
         [\text{Type}] \space \text{identifier}() \space [\text{Scope}] \\
+        [\text{Term}]
     \end{cases} \\
     [\text{Scope}] &\to \{\text{[Statement]}^*\} \\
     [\text{Type}] &\to
