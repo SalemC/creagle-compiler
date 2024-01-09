@@ -1,6 +1,7 @@
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
 import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
+import { UndeclaredFunctionError } from './errors/UndeclaredFunctionError';
 import { wrapInteger } from './helpers/wrapInteger';
 import {
     type IVariable,
@@ -17,11 +18,11 @@ import {
     type TNodeBinaryExpression,
     type INodeScope,
 } from '../Parser/types';
-import { UndeclaredFunctionError } from './errors/UndeclaredFunctionError';
 
 class Generator {
     private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {}, functions: {} }];
     private assemblyOutputStreamName: keyof TAssemblyStreamNames = 'main';
+    private currentFunctionIdentifier: string | null = null;
     private stackSizeBytes: number = 0;
     private labelCount: number = 0;
     private readonly assembly: TAssemblyStreamNames = {
@@ -30,6 +31,12 @@ class Generator {
     };
 
     public generateAssembly(statements: readonly TNodeStatement[]): string {
+        this.push('rbp');
+        this.move('rbp', 'rsp');
+
+        // Ensure the stack size is 0 because the above push would have modified it.
+        this.stackSizeBytes = 0;
+
         statements.forEach(this.generateStatement.bind(this));
 
         // Add an initial syscall to ensure the program always exits.
@@ -88,10 +95,6 @@ class Generator {
                     statement.expression,
                 );
 
-                const variableStackLocation = this.getStackPointerOffset(
-                    this.stackSizeBytes - variable.stackLocation,
-                );
-
                 const fullRegister = 'rax';
                 const registerSubset = this.getRegisterFromDataType(variable.type, 'a');
 
@@ -103,7 +106,7 @@ class Generator {
 
                 // Direct memory to memory transfers are disallowed in x86-64 assembly,
                 // therefore we have to move into a register, then from the register to the address.
-                this.move(variableStackLocation, fullRegister);
+                this.move(this.getStackPointerOffset(variable.stackLocation), fullRegister);
 
                 break;
             }
@@ -140,12 +143,16 @@ class Generator {
                     throw new IdentifierRedeclarationError(identifier);
                 }
 
-                const returnType = {
+                const returnType: IDataTypeInfo = {
                     type: statement.dataType,
                     unsigned: statement.unsigned,
                 };
 
                 const label = this.generateLabel(identifier);
+
+                const currentFunctionIdentifierBackup = this.currentFunctionIdentifier;
+
+                this.currentFunctionIdentifier = identifier;
 
                 this.getCurrentScope().functions[identifier] = {
                     label,
@@ -153,35 +160,53 @@ class Generator {
                 };
 
                 this.emit(`\n${label}:`, false);
+                // Preserve rsp so we can deallocate any memory this scope allocates before we return.
+                this.push('rsp');
+
+                // Functions are jumped to via the 'call' instruction, but that instruction pushes a qword to the stack.
+                // That means all function scopes are automatically padded by 8 bytes.
+                this.stackSizeBytes += 8;
 
                 this.generateScope(statement.scope, returnType);
 
-                // It's the scope's responsibility to put the return value in the correct register
-                // before we return due to the potential need to deallocate the scope.
+                this.stackSizeBytes -= 8;
+
+                this.pop('rsp');
                 this.return();
 
                 this.assemblyOutputStreamName = 'main';
+                this.currentFunctionIdentifier = currentFunctionIdentifierBackup;
 
                 break;
             }
 
             case 'return': {
-                const { returnType } = this.getCurrentScope();
-
-                if (returnType === undefined) {
+                if (this.currentFunctionIdentifier === null) {
                     throw new Error(
                         "The 'return' keyword can only be used within the body of a function.",
                     );
                 }
 
-                this.generateExpression(returnType, statement.expression);
+                const currentFunction = this.getFunction(this.currentFunctionIdentifier);
 
+                if (currentFunction === null) {
+                    throw new Error(
+                        "The 'return' keyword can only be used within the body of a function.",
+                    );
+                }
+
+                this.generateExpression(currentFunction.returnType, statement.expression);
                 this.pop('rax');
 
-                // We don't use the return keyword here because we can assert we're inside a function's scope.
-                // Since that's the case, our function body may have allocated variables on the stack
-                // and we will need to deallocate them before returning.
-                // The responsibility of this is delegated to the function statement generator.
+                // We're about to pop the return address and exit this function.
+                // In order to to do, we need to ensure we've deallocated any locally allocated variables.
+                this.deallocateCurrentScope();
+
+                // Since it's valid to have multiple 'return' tokens in the same function that all cause it to immediately exit,
+                // these tokens should not modify local stack count. When we're finished generating the function, it will perform
+                // a pop and return which will balance our local stack count instead.
+                this.emit('pop rsp');
+                this.return();
 
                 break;
             }
@@ -217,26 +242,42 @@ class Generator {
                 break;
             }
 
+            case 'term': {
+                this.generateTerm({ type: 'qword', unsigned: false }, statement.term);
+
+                break;
+            }
+
             default: {
                 return statement satisfies never;
             }
         }
     }
 
-    private generateScope(scope: INodeScope, dataTypeInfo?: IDataTypeInfo): void {
-        this.scopes.push({ sizeBytes: 0, variables: {}, functions: {}, returnType: dataTypeInfo });
+    private generateScope(scope: INodeScope, returnType?: IDataTypeInfo): void {
+        this.scopes.push({ sizeBytes: 0, variables: {}, functions: {}, returnType });
 
         scope.statements.forEach(this.generateStatement.bind(this));
 
         const { sizeBytes } = this.getCurrentScope();
 
-        // Move the stack pointer back to where it was before this scope was created.
-        this.add('rsp', sizeBytes.toString(10));
+        this.deallocateCurrentScope();
 
         this.stackSizeBytes -= sizeBytes;
 
         // Remove the scope along with all its variables.
         this.scopes.pop();
+    }
+
+    private deallocateCurrentScope(): void {
+        const { sizeBytes } = this.getCurrentScope();
+
+        if (sizeBytes === 0) {
+            return;
+        }
+
+        // Move the stack pointer back to where it was before this scope was created.
+        this.add('rsp', sizeBytes.toString(10));
     }
 
     private generateBinaryExpression(
@@ -362,10 +403,7 @@ class Generator {
 
                 const fullRegister = 'rax';
                 const registerSubset = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
-
-                const variableStackLocation = this.getStackPointerOffset(
-                    this.stackSizeBytes - variable.stackLocation,
-                );
+                const variableStackLocation = this.getStackPointerOffset(variable.stackLocation);
 
                 if (registerSubset === fullRegister) {
                     this.move(fullRegister, variableStackLocation);
@@ -411,22 +449,9 @@ class Generator {
     }
 
     private getCurrentScope(): IScope {
-        const currentScope = this.scopes.at(-1) ?? null;
-
-        if (currentScope !== null) {
-            return currentScope;
-        }
-
-        // If there isn't already a scope, create a new one and return it.
-        const newScope: IScope = {
-            sizeBytes: 0,
-            variables: {},
-            functions: {},
-        };
-
-        this.scopes.push(newScope);
-
-        return newScope;
+        // There will always be at least one scope.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return this.scopes.at(-1)!;
     }
 
     private getVariable(identifier: string): IVariable | null {
@@ -511,7 +536,7 @@ class Generator {
     }
 
     private getStackPointerOffset(offset: number): string {
-        return offset === 0 ? '[rsp]' : `[rsp + ${offset.toString(10)}]`;
+        return `[rbp - ${offset.toString(10)}]`;
     }
 
     private setIfGreaterThanOrEqual(register: TRegister): void {
