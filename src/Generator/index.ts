@@ -17,6 +17,7 @@ import {
     type TNodeStatement,
     type TNodeBinaryExpression,
     type INodeScope,
+    type INodeStatementVariableDefinition,
 } from '../Parser/types';
 
 class Generator {
@@ -32,9 +33,6 @@ class Generator {
     public generateAssembly(statements: readonly TNodeStatement[]): string {
         this.emitFunctionPrologue();
 
-        // Ensure the current scope size is 0 because the prologue will have modified it.
-        this.getCurrentScope().sizeBytes = 0;
-
         statements.forEach(this.generateStatement.bind(this));
 
         // Add an initial syscall to ensure the program always exits.
@@ -49,7 +47,7 @@ class Generator {
     private generateStatement(statement: TNodeStatement): void {
         switch (statement.type) {
             case 'variable': {
-                const identifier = statement.identifier.literal;
+                const identifier = statement.definition.identifier.literal;
 
                 if (this.getVariable(identifier) !== null) {
                     throw new IdentifierRedeclarationError(identifier);
@@ -57,17 +55,17 @@ class Generator {
 
                 this.generateExpression(
                     {
-                        type: statement.dataType,
-                        unsigned: statement.unsigned,
+                        type: statement.definition.dataType,
+                        unsigned: statement.definition.unsigned,
                     },
                     statement.expression,
                 );
 
                 this.getCurrentScope().variables[identifier] = {
                     stackLocation: this.getCurrentScope().sizeBytes,
-                    type: statement.dataType,
-                    unsigned: statement.unsigned,
-                    mutable: statement.mutable,
+                    type: statement.definition.dataType,
+                    unsigned: statement.definition.unsigned,
+                    mutable: statement.definition.mutable,
                 };
 
                 break;
@@ -111,7 +109,7 @@ class Generator {
             }
 
             case 'scope': {
-                this.generateScope(statement);
+                this.generateAnonymousScope(statement);
 
                 break;
             }
@@ -126,7 +124,7 @@ class Generator {
                 this.compare('rax', '0');
                 this.jumpWhenZero(mainLabel);
 
-                this.generateScope(statement.scope);
+                this.generateAnonymousScope(statement.scope);
 
                 this.emitLabel(mainLabel);
 
@@ -156,12 +154,12 @@ class Generator {
                 this.getCurrentScope().functions[identifier] = {
                     label,
                     returnType,
+                    parameters: statement.parameters,
                 };
 
                 this.emitLabel(label);
-                this.emitFunctionPrologue();
 
-                this.generateScope(statement.scope, returnType);
+                this.generateFunctionScope(statement.scope, statement.parameters, returnType);
 
                 this.assemblyEmissionStreamName = 'main';
                 this.currentFunctionIdentifier = null;
@@ -205,7 +203,7 @@ class Generator {
                 this.compare('rax', '0');
                 this.jumpWhenZero(mainLabel);
 
-                this.generateScope(statement.scope);
+                this.generateAnonymousScope(statement.scope);
 
                 this.jump(whileLabelStart);
                 this.emitLabel(mainLabel);
@@ -236,22 +234,45 @@ class Generator {
         }
     }
 
-    private generateScope(scope: INodeScope, returnType?: IDataTypeInfo): void {
+    private generateFunctionScope(
+        scope: INodeScope,
+        parameters: INodeStatementVariableDefinition[],
+        returnType: IDataTypeInfo,
+    ): void {
         this.scopes.push({ sizeBytes: 0, variables: {}, functions: {}, returnType });
+
+        this.emitFunctionPrologue();
+
+        // Add the variables to the scope before we generate it.
+        parameters.forEach((parameter, index) => {
+            this.getCurrentScope().variables[parameter.identifier.literal] = {
+                // -16 to move us before the prologue and the return address.
+                stackLocation: -16 - index * 8,
+                mutable: parameter.mutable,
+                unsigned: parameter.unsigned,
+                type: parameter.dataType,
+            };
+        });
 
         scope.statements.forEach(this.generateStatement.bind(this));
 
-        // Deallocate the current scope. Functions won't need to do this due to their epilogue.
-        if (returnType === undefined) {
-            const { sizeBytes } = this.getCurrentScope();
+        // Remove the scope.
+        this.scopes.pop();
+    }
 
-            if (sizeBytes > 0) {
-                // Move the stack pointer back to where it was before this scope was created.
-                this.add('rsp', sizeBytes.toString(10));
-            }
+    private generateAnonymousScope(scope: INodeScope): void {
+        this.scopes.push({ sizeBytes: 0, variables: {}, functions: {} });
+
+        scope.statements.forEach(this.generateStatement.bind(this));
+
+        const { sizeBytes } = this.getCurrentScope();
+
+        // Deallocate the current scope by moving the stack pointer back to where it was before this scope was created.
+        if (sizeBytes > 0) {
+            this.add('rsp', sizeBytes.toString(10));
         }
 
-        // Remove the scope along with all its variables.
+        // Remove the scope.
         this.scopes.pop();
     }
 
@@ -405,7 +426,36 @@ class Generator {
                     throw new UndeclaredFunctionError(identifier);
                 }
 
+                if (term.arguments.length !== functionDefinition.parameters.length) {
+                    throw new Error('Function argument imbalance');
+                }
+
+                // Push the arguments onto the stack from right to left, conforming to the cdecl calling convention.
+                [...term.arguments].reverse().forEach((argument, index) => {
+                    // We've verified the balance for a safe check here with the above balance check.
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    const parameter = functionDefinition.parameters[index]!;
+
+                    this.generateExpression(
+                        {
+                            type: parameter.dataType,
+                            unsigned: parameter.unsigned,
+                        } satisfies IDataTypeInfo,
+                        argument,
+                    );
+                });
+
                 this.call(functionDefinition.label);
+
+                // If this function has arguments, we need to deallocate them all once we've finished the function call.
+                if (term.arguments.length > 0) {
+                    const allocatedBytes = term.arguments.length * 8;
+
+                    this.add('rsp', allocatedBytes.toString(10));
+
+                    this.getCurrentScope().sizeBytes -= allocatedBytes;
+                }
+
                 this.push('rax');
 
                 break;
@@ -430,9 +480,13 @@ class Generator {
     }
 
     private getVariable(identifier: string): IVariable | null {
-        // It's prohibited to reference variables outside the current function scope.
         if (this.currentFunctionIdentifier !== null) {
-            return this.getCurrentScope().variables[identifier] ?? null;
+            // It's prohibited to reference variables outside the current function scope.
+            const scope = this.searchForScope(
+                (scope) => identifier in scope.variables || scope.returnType !== undefined,
+            );
+
+            return scope?.variables[identifier] ?? null;
         }
 
         const scope = this.searchForScope((scope) => identifier in scope.variables);
@@ -506,7 +560,7 @@ class Generator {
     }
 
     private getBasePointerOffset(offset: number): string {
-        return `[rbp - ${offset.toString(10)}]`;
+        return `[rbp ${offset >= 0 ? '-' : '+'} ${Math.abs(offset).toString(10)}]`;
     }
 
     private setIfGreaterThanOrEqual(register: TRegister): void {
@@ -623,6 +677,10 @@ class Generator {
     private emitFunctionPrologue(): void {
         this.push('rbp');
         this.move('rbp', 'rsp');
+
+        // Even though we've just pushed to the stack, the current scope size needs to be 0
+        // because we've just created a new stack frame by moving rsp into rbp.
+        this.getCurrentScope().sizeBytes = 0;
     }
 
     private emitLabel(label: string): void {

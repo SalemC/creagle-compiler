@@ -1,4 +1,4 @@
-import { type TDataType } from '../Parser/types';
+import { type INodeStatementVariableDefinition, type TDataType } from '../Parser/types';
 
 export interface IDataTypeInfo {
     type: TDataType;
@@ -13,6 +13,7 @@ export interface IVariable extends IDataTypeInfo {
 export interface IFunction {
     label: string;
     returnType: IDataTypeInfo;
+    parameters: INodeStatementVariableDefinition[];
 }
 
 export interface IScope {

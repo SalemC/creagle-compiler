@@ -160,19 +160,22 @@ describe('Generator feature', () => {
         const assembly = generator.generateAssembly([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: { column: 10, row: 1 },
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: { column: 10, row: 1 },
+                    },
+                    mutable: true,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'binaryExpressionAdd',
                     lhs: { type: 'term', term: { type: 'integer', literal: '8' } },
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
-                mutable: true,
-                unsigned: false,
             },
         ]);
 
@@ -206,19 +209,22 @@ describe('Generator feature', () => {
         const assembly = generator.generateAssembly([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: { column: 10, row: 1 },
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: { column: 10, row: 1 },
+                    },
+                    mutable: true,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'binaryExpressionSubtract',
                     lhs: { type: 'term', term: { type: 'integer', literal: '8' } },
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
-                mutable: true,
-                unsigned: false,
             },
         ]);
 
@@ -252,19 +258,22 @@ describe('Generator feature', () => {
         const assembly = generator.generateAssembly([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: { column: 10, row: 1 },
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: { column: 10, row: 1 },
+                    },
+                    mutable: true,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'binaryExpressionMultiply',
                     lhs: { type: 'term', term: { type: 'integer', literal: '8' } },
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
-                mutable: true,
-                unsigned: false,
             },
         ]);
 
@@ -298,19 +307,22 @@ describe('Generator feature', () => {
         const assembly = generator.generateAssembly([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: { column: 10, row: 1 },
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: { column: 10, row: 1 },
+                    },
+                    mutable: true,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'binaryExpressionDivide',
                     lhs: { type: 'term', term: { type: 'integer', literal: '8' } },
                     rhs: { type: 'term', term: { type: 'integer', literal: '2' } },
                 },
-                mutable: true,
-                unsigned: false,
             },
         ]);
 
@@ -344,11 +356,16 @@ describe('Generator feature', () => {
         const assembly = generator.generateAssembly([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: { column: 10, row: 1 },
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: { column: 10, row: 1 },
+                    },
+                    mutable: true,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'binaryExpressionAdd',
@@ -363,8 +380,6 @@ describe('Generator feature', () => {
                         rhs: { type: 'term', term: { type: 'integer', literal: '3' } },
                     },
                 },
-                mutable: true,
-                unsigned: false,
             },
         ]);
 

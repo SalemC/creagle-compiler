@@ -18,6 +18,7 @@ export interface INodeExpressionTermParenthesised {
 export interface INodeExpressionTermFunctionCall {
     type: 'function_call';
     literal: IToken['literal'];
+    arguments: TNodeExpression[];
 }
 
 export interface INodeExpressionTerm {
@@ -64,13 +65,18 @@ export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 
 export type TDataType = 'byte' | 'word' | 'dword' | 'qword';
 
-export interface INodeStatementVariable {
-    type: 'variable';
+export interface INodeStatementVariableDefinition {
+    type: 'variable-definition';
     dataType: TDataType;
     identifier: IToken;
-    expression: TNodeExpression;
     unsigned: boolean;
     mutable: boolean;
+}
+
+export interface INodeStatementVariable {
+    type: 'variable';
+    definition: INodeStatementVariableDefinition;
+    expression: TNodeExpression;
 }
 
 export interface INodeStatementVariableReassignment {
@@ -107,6 +113,7 @@ export interface INodeStatementFunction {
     identifier: IToken;
     unsigned: boolean;
     scope: INodeScope;
+    parameters: INodeStatementVariableDefinition[];
 }
 
 export interface INodeStatementReturn {
