@@ -1,17 +1,9 @@
-unsigned byte getSix() {
-    return 6;
+byte factorial(byte x) {
+    if (x == 0) {
+        return 1;
+    }
+
+    return x * factorial(x - 1);
 }
 
-unsigned byte getFour() {
-    unsigned byte value = 4;
-
-    return value;
-}
-
-unsigned byte getTen() {
-    unsigned byte four = getFour();
-
-    return four + getSix();
-}
-
-terminate(getTen());
+terminate(factorial(4));
