@@ -449,7 +449,7 @@ class Parser {
                 if (this.peek()?.type === TOKEN_TYPES.openParenthesis) {
                     this.consumeToken();
 
-                    // @todo probably should have some lookup here to validate arguments instead of in generation.
+                    // @todo add lookup to validate arguments instead of in generation.
                     const functionArguments: TNodeExpression[] = [];
 
                     while (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
