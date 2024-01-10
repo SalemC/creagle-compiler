@@ -2,6 +2,9 @@ import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationEr
 import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { UndeclaredFunctionError } from './errors/UndeclaredFunctionError';
+import { ArgumentImbalanceError } from './errors/ArgumentImbalanceError';
+import { MissingReturnError } from './errors/MissingReturnError';
+import { InvalidReturnError } from './errors/InvalidReturnError';
 import { wrapInteger } from './helpers/wrapInteger';
 import {
     type IVariable,
@@ -19,7 +22,6 @@ import {
     type INodeScope,
     type INodeStatementVariableDefinition,
 } from '../Parser/types';
-import { ArgumentImbalanceError } from './errors/ArgumentImbalanceError';
 
 class Generator {
     private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {}, functions: {} }];
@@ -159,7 +161,6 @@ class Generator {
                 };
 
                 this.emitLabel(label);
-
                 this.generateFunctionScope(statement.scope, statement.parameters, returnType);
 
                 this.assemblyEmissionStreamName = 'main';
@@ -170,17 +171,13 @@ class Generator {
 
             case 'return': {
                 if (this.currentFunctionIdentifier === null) {
-                    throw new Error(
-                        "The 'return' keyword can only be used within the body of a function.",
-                    );
+                    throw new InvalidReturnError();
                 }
 
                 const currentFunction = this.getFunction(this.currentFunctionIdentifier);
 
                 if (currentFunction === null) {
-                    throw new Error(
-                        "The 'return' keyword can only be used within the body of a function.",
-                    );
+                    throw new UndeclaredFunctionError(this.currentFunctionIdentifier);
                 }
 
                 this.generateExpression(currentFunction.returnType, statement.expression);
@@ -196,7 +193,6 @@ class Generator {
                 const mainLabel = this.getLabel('main');
 
                 this.emitLabel(whileLabelStart);
-
                 this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
 
                 // Pop the value into rax so it's not left on the stack.
@@ -207,6 +203,7 @@ class Generator {
                 this.generateAnonymousScope(statement.scope);
 
                 this.jump(whileLabelStart);
+
                 this.emitLabel(mainLabel);
 
                 break;
@@ -254,6 +251,12 @@ class Generator {
                 type: parameter.dataType,
             };
         });
+
+        if (scope.statements.at(-1)?.type !== 'return') {
+            // When generating a function scope, it's guaranteed we have a function identifier.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            throw new MissingReturnError(this.currentFunctionIdentifier!);
+        }
 
         scope.statements.forEach(this.generateStatement.bind(this));
 
