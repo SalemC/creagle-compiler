@@ -1,0 +1,17 @@
+unsigned byte getSix() {
+    return 6;
+}
+
+unsigned byte getFour() {
+    unsigned byte value = 4;
+
+    return value;
+}
+
+unsigned byte getTen() {
+    unsigned byte four = getFour();
+
+    return four + getSix();
+}
+
+terminate(getTen());
