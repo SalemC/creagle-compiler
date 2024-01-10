@@ -430,20 +430,20 @@ class Generator {
                     throw new Error('Function argument imbalance');
                 }
 
-                // Push the arguments onto the stack from right to left, conforming to the cdecl calling convention.
-                [...term.arguments].reverse().forEach((argument, index) => {
+                for (let i = term.arguments.length - 1; i >= 0; i -= 1) {
                     // We've verified the balance for a safe check here with the above balance check.
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    const parameter = functionDefinition.parameters[index]!;
+                    const parameter = functionDefinition.parameters[i]!;
 
                     this.generateExpression(
                         {
                             type: parameter.dataType,
                             unsigned: parameter.unsigned,
                         } satisfies IDataTypeInfo,
-                        argument,
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        term.arguments.at(i)!,
                     );
-                });
+                }
 
                 this.call(functionDefinition.label);
 
