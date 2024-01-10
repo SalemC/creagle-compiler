@@ -4,16 +4,17 @@ $$
     [\text{Statement}] &\to
     \begin{cases}
         \text{terminate}([\text{Expression}]); \\
-        \text{?mutable} \space \text{[Type]} \space \text{identifier} = [\text{Expression}]; \\
+        [\text{VariableDefinition}] = [\text{Expression}]; \\
         \text{identifier} = [\text{Expression}]; \\
-        \text{[Scope]} \\
+        [\text{Scope}] \\
         \text{return} \space [\text{Expression}]; \\
         \text{if} \space ([\text{Expression}]) \space [\text{Scope}] \\
         \text{while} \space ([\text{Expression}]) \space [\text{Scope}] \\
-        [\text{Type}] \space \text{identifier}() \space [\text{Scope}] \\
+        [\text{Type}] \space \text{identifier}([\text{VariableDefinition}]^*, ...) \space [\text{Scope}] \\
         [\text{Term}]
     \end{cases} \\
-    [\text{Scope}] &\to \{\text{[Statement]}^*\} \\
+    [\text{Scope}] &\to [{\text{Statement}^*}] \\
+    [\text{VariableDefinition}] &\to \space ?\text{mutable} \space [\text{Type}] \space \text{identifier} \\
     [\text{Type}] &\to
     \begin{cases}
         \text{?unsigned byte} \\
@@ -42,7 +43,7 @@ $$
     \begin{cases}
         [\text{IntegerLiteral}] \\
         \text{identifier} \\
-        \text{identifier()} \\
+        \text{identifier}([\text{Expression}]^*, ...) \\
         ([\text{Expression}]) \\
     \end{cases} \\
     [\text{IntegerLiteral}] &\to \{1,2,3,\ldots,\infty\} \\
