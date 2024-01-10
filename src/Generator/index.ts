@@ -19,6 +19,7 @@ import {
     type INodeScope,
     type INodeStatementVariableDefinition,
 } from '../Parser/types';
+import { ArgumentImbalanceError } from './errors/ArgumentImbalanceError';
 
 class Generator {
     private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {}, functions: {} }];
@@ -427,7 +428,10 @@ class Generator {
                 }
 
                 if (term.arguments.length !== functionDefinition.parameters.length) {
-                    throw new Error('Function argument imbalance');
+                    throw new ArgumentImbalanceError(
+                        term.arguments.length,
+                        functionDefinition.parameters.length,
+                    );
                 }
 
                 for (let i = term.arguments.length - 1; i >= 0; i -= 1) {
