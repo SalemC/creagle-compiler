@@ -3,7 +3,7 @@ class ArgumentImbalanceError extends Error {
         super(
             `Expected ${expectedArgumentCount.toString(
                 10,
-            )} arguments, you provided ${argumentCount.toString(10)}`,
+            )} arguments, you provided ${argumentCount.toString(10)}.`,
         );
     }
 }
