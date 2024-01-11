@@ -183,7 +183,7 @@ class Generator {
                 this.generateExpression(currentFunction.returnType, statement.expression);
                 // Move the result of the expression into rax, ready for function exit.
                 this.pop('rax');
-                this.emitFunctionEpilogue();
+                this.emitFunctionEpilogue(currentFunction.parameters.length * 8);
 
                 break;
             }
@@ -454,11 +454,10 @@ class Generator {
 
                 this.call(functionDefinition.label);
 
-                // If this function has arguments, we need to deallocate them all once we've finished the function call.
+                // The return instruction handles balancing the stack once a function exits,
+                // but we still need to ensure the scope knows they've been deallocated.
                 if (term.arguments.length > 0) {
                     const allocatedBytes = term.arguments.length * 8;
-
-                    this.add('rsp', allocatedBytes.toString(10));
 
                     this.getCurrentScope().sizeBytes -= allocatedBytes;
                 }
@@ -600,8 +599,13 @@ class Generator {
         this.emit(`call ${functionLabel}`);
     }
 
-    private return(): void {
-        this.emit('ret');
+    private return(allocatedBytes?: number): void {
+        const allocatedBytesString =
+            allocatedBytes === undefined || allocatedBytes === 0
+                ? ''
+                : ` ${allocatedBytes.toString(10)}`;
+
+        this.emit(`ret${allocatedBytesString}`);
     }
 
     private leave(): void {
@@ -676,9 +680,9 @@ class Generator {
         this.emit(`${instruction} ${register}`);
     }
 
-    private emitFunctionEpilogue(): void {
+    private emitFunctionEpilogue(allocatedBytes?: number): void {
         this.leave();
-        this.return();
+        this.return(allocatedBytes);
     }
 
     private emitFunctionPrologue(): void {
