@@ -1,7 +1,12 @@
 import { Generator } from '..';
+import { type IScope, type TAssemblyStreamNames } from '../types';
+
+const getAssembly = (generator: Generator, streamName: keyof TAssemblyStreamNames): string =>
+    // @ts-expect-error private property.
+    generator.assembly[streamName];
 
 // @ts-expect-error private property.
-const getAssembly = (generator: Generator): string => generator.assembly;
+const getCurrentScope = (generator: Generator): IScope => generator.getCurrentScope();
 
 const convertInstructionArrayToString = (instructions: string[]): string =>
     instructions.reduce((accumulator, instruction) => `${accumulator}\n    ${instruction}`, '');
@@ -10,18 +15,15 @@ describe('Generator unit', () => {
     it('should append a push assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('push rax');
-
-        // @ts-expect-error private property.
-        expect(generator.stackSizeBytes).toEqual(0);
+        expect(getAssembly(generator, 'main')).not.toContain('push rax');
+        expect(getCurrentScope(generator).sizeBytes).toEqual(0);
 
         // @ts-expect-error private method.
         generator.push('rax');
 
-        // @ts-expect-error private property.
-        expect(generator.stackSizeBytes).toEqual(8);
+        expect(getCurrentScope(generator).sizeBytes).toEqual(8);
 
-        const assembly = getAssembly(generator).split('\n');
+        const assembly = getAssembly(generator, 'main').split('\n');
 
         expect(assembly.at(-2)).toEqual('    push rax');
     });
@@ -29,18 +31,16 @@ describe('Generator unit', () => {
     it('should append a pop assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('pop rax');
+        expect(getAssembly(generator, 'main')).not.toContain('pop rax');
 
-        // @ts-expect-error private property.
-        generator.stackSizeBytes = 8;
+        getCurrentScope(generator).sizeBytes = 8;
 
         // @ts-expect-error private method.
         generator.pop('rax');
 
-        // @ts-expect-error private property.
-        expect(generator.stackSizeBytes).toEqual(0);
+        expect(getCurrentScope(generator).sizeBytes).toEqual(0);
 
-        const assembly = getAssembly(generator).split('\n');
+        const assembly = getAssembly(generator, 'main').split('\n');
 
         expect(assembly.at(-2)).toEqual('    pop rax');
     });
@@ -48,12 +48,12 @@ describe('Generator unit', () => {
     it('should append a mov assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('mov rax, 100');
+        expect(getAssembly(generator, 'main')).not.toContain('mov rax, 100');
 
         // @ts-expect-error private method.
         generator.move('rax', '100');
 
-        const assembly = getAssembly(generator).split('\n');
+        const assembly = getAssembly(generator, 'main').split('\n');
 
         expect(assembly.at(-2)).toEqual('    mov rax, 100');
     });
@@ -61,12 +61,12 @@ describe('Generator unit', () => {
     it('should append an add assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('add rax, rbx');
+        expect(getAssembly(generator, 'main')).not.toContain('add rax, rbx');
 
         // @ts-expect-error private method.
         generator.add('rax', 'rbx');
 
-        const assembly = getAssembly(generator).split('\n');
+        const assembly = getAssembly(generator, 'main').split('\n');
 
         expect(assembly.at(0)).toEqual('    add rax, rbx');
     });
@@ -74,12 +74,12 @@ describe('Generator unit', () => {
     it('should append a subtract assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('sub rax, rbx');
+        expect(getAssembly(generator, 'main')).not.toContain('sub rax, rbx');
 
         // @ts-expect-error private method.
         generator.subtract('rax', 'rbx');
 
-        const assembly = getAssembly(generator).split('\n');
+        const assembly = getAssembly(generator, 'main').split('\n');
 
         expect(assembly.at(0)).toEqual('    sub rax, rbx');
     });
@@ -87,12 +87,12 @@ describe('Generator unit', () => {
     it('should append a multiply assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('imul rbx');
+        expect(getAssembly(generator, 'main')).not.toContain('imul rbx');
 
         // @ts-expect-error private method.
         generator.multiply('rbx');
 
-        const assembly = getAssembly(generator).split('\n');
+        const assembly = getAssembly(generator, 'main').split('\n');
 
         expect(assembly.at(0)).toEqual('    imul rbx');
     });
@@ -100,12 +100,12 @@ describe('Generator unit', () => {
     it('should append a divide assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('idiv rbx');
+        expect(getAssembly(generator, 'main')).not.toContain('idiv rbx');
 
         // @ts-expect-error private method.
         generator.divide('rbx');
 
-        const assembly = getAssembly(generator).split('\n');
+        const assembly = getAssembly(generator, 'main').split('\n');
 
         expect(assembly.at(0)).toEqual('    idiv rbx');
     });
@@ -113,28 +113,14 @@ describe('Generator unit', () => {
     it('should append an indented assembly line to the underlying assembly', () => {
         const generator = new Generator();
 
-        expect(getAssembly(generator)).not.toContain('add rax, rbx');
+        expect(getAssembly(generator, 'main')).not.toContain('add rax, rbx');
 
         // @ts-expect-error private method.
         generator.emit('add rax, rbx');
 
-        const assembly = getAssembly(generator).split('\n');
+        const assembly = getAssembly(generator, 'main').split('\n');
 
         expect(assembly.at(-2)).toEqual('    add rax, rbx');
-    });
-
-    it('should reset the underlying assembly', () => {
-        const generator = new Generator();
-
-        // @ts-expect-error private property.
-        generator.assembly = 'string that should be reset';
-
-        expect(getAssembly(generator)).not.toEqual('');
-
-        // @ts-expect-error private method.
-        generator.reset();
-
-        expect(getAssembly(generator)).toEqual('');
     });
 
     it('should generate initial assembly', () => {
@@ -142,12 +128,19 @@ describe('Generator unit', () => {
 
         const assembly = generator.generateAssembly([]);
 
+        const expectedInstructions = [
+            'push rbp',
+            'mov rbp, rsp',
+            'mov rax, 60',
+            'mov rdi, 0',
+            'leave',
+            'syscall',
+        ];
+
         const expectedAssembly =
-            'global _start\n\n' +
-            '_start:\n' +
-            '    mov rax, 60\n' +
-            '    mov rdi, 0\n' +
-            '    syscall\n';
+            'global _start\n\n_start:' +
+            convertInstructionArrayToString(expectedInstructions) +
+            '\n';
 
         expect(assembly).toEqual(expectedAssembly);
     });
@@ -180,6 +173,8 @@ describe('Generator feature', () => {
         ]);
 
         const expectedInstructions = [
+            'push rbp',
+            'mov rbp, rsp',
             'mov al, 2',
             'movsx rax, byte al',
             'push rax',
@@ -192,6 +187,7 @@ describe('Generator feature', () => {
             'push rax',
             'mov rax, 60',
             'mov rdi, 0',
+            'leave',
             'syscall',
         ];
 
@@ -229,6 +225,8 @@ describe('Generator feature', () => {
         ]);
 
         const expectedInstructions = [
+            'push rbp',
+            'mov rbp, rsp',
             'mov al, 2',
             'movsx rax, byte al',
             'push rax',
@@ -241,6 +239,7 @@ describe('Generator feature', () => {
             'push rax',
             'mov rax, 60',
             'mov rdi, 0',
+            'leave',
             'syscall',
         ];
 
@@ -278,6 +277,8 @@ describe('Generator feature', () => {
         ]);
 
         const expectedInstructions = [
+            'push rbp',
+            'mov rbp, rsp',
             'mov al, 2',
             'movsx rax, byte al',
             'push rax',
@@ -290,6 +291,7 @@ describe('Generator feature', () => {
             'push rax',
             'mov rax, 60',
             'mov rdi, 0',
+            'leave',
             'syscall',
         ];
 
@@ -327,6 +329,8 @@ describe('Generator feature', () => {
         ]);
 
         const expectedInstructions = [
+            'push rbp',
+            'mov rbp, rsp',
             'mov al, 2',
             'movsx rax, byte al',
             'push rax',
@@ -339,6 +343,7 @@ describe('Generator feature', () => {
             'push rax',
             'mov rax, 60',
             'mov rdi, 0',
+            'leave',
             'syscall',
         ];
 
@@ -384,6 +389,8 @@ describe('Generator feature', () => {
         ]);
 
         const expectedInstructions = [
+            'push rbp',
+            'mov rbp, rsp',
             'mov al, 3',
             'movsx rax, byte al',
             'push rax',
@@ -410,6 +417,7 @@ describe('Generator feature', () => {
             'push rax',
             'mov rax, 60',
             'mov rdi, 0',
+            'leave',
             'syscall',
         ];
 
