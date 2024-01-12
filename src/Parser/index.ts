@@ -16,6 +16,13 @@ import {
     type INodeScope,
     type INodeStatementIf,
     type INodeStatementWhile,
+    type INodeStatementFunction,
+    type INodeStatementReturn,
+    type INodeExpressionTermIntegerLiteral,
+    type INodeExpressionTermIdentifier,
+    type INodeExpressionTermParenthesised,
+    type INodeExpressionTermFunctionCall,
+    type INodeStatementVariableDefinition,
 } from './types';
 
 class Parser {
@@ -24,8 +31,6 @@ class Parser {
     private readonly tokens: IToken[] = [];
 
     public parseTokens(tokens: readonly IToken[]): TNodeStatement[] {
-        this.reset();
-
         // Copy all the original tokens into our list of tokens to avoid modifying the original array.
         this.tokens.push(...tokens);
 
@@ -83,12 +88,26 @@ class Parser {
                 return this.parseScope();
             }
 
-            case TOKEN_TYPES.unsigned:
+            case TOKEN_TYPES.unsigned: {
+                // Skip the data type and the identifier, go straight for the succeeding token; if it's an open parenthesis, we're parsing a function.
+                const isFunction = this.peek(3)?.type === 'open_parenthesis';
+
+                return isFunction ? this.parseFunction() : this.parseVariable();
+            }
+
             case TOKEN_TYPES.mutable: {
                 return this.parseVariable();
             }
 
             case TOKEN_TYPES.identifier: {
+                if (this.peek(1)?.type !== TOKEN_TYPES.assignment) {
+                    const term = this.parseTerm();
+
+                    this.consumeToken(TOKEN_TYPES.semicolon);
+
+                    return term;
+                }
+
                 this.consumeToken();
                 this.consumeToken(TOKEN_TYPES.assignment);
 
@@ -115,6 +134,16 @@ class Parser {
                 return { type: 'terminate', expression } satisfies INodeStatementTerminate;
             }
 
+            case TOKEN_TYPES.return: {
+                this.consumeToken();
+
+                const expression = this.parseExpression();
+
+                this.consumeToken(TOKEN_TYPES.semicolon);
+
+                return { type: 'return', expression } satisfies INodeStatementReturn;
+            }
+
             case TOKEN_TYPES.eof: {
                 this.consumeToken();
 
@@ -123,7 +152,20 @@ class Parser {
 
             default: {
                 if (this.isTokenOfDataType(token.type)) {
-                    return this.parseVariable();
+                    // Skip the identifier, go straight for the succeeding token; if it's an open parenthesis, we're parsing a function.
+                    const isFunction = this.peek(2)?.type === 'open_parenthesis';
+
+                    return isFunction ? this.parseFunction() : this.parseVariable();
+                }
+
+                try {
+                    const term = this.parseTerm();
+
+                    this.consumeToken(TOKEN_TYPES.semicolon);
+
+                    return term;
+                } catch {
+                    // If it's not a valid term, we'll let this fall through and continue execution.
                 }
 
                 throw new InvalidTokenError();
@@ -147,12 +189,67 @@ class Parser {
             statements.push(statement);
         }
 
-        this.consumeToken();
+        this.consumeToken(TOKEN_TYPES.closeCurlyBrace);
 
         return { type: 'scope', statements } satisfies INodeScope;
     }
 
-    private parseVariable(): INodeStatementVariable {
+    private parseFunction(): INodeStatementFunction {
+        let unsigned = false;
+
+        if (this.peek()?.type === TOKEN_TYPES.unsigned) {
+            this.consumeToken();
+
+            unsigned = true;
+        }
+
+        const dataType = this.peek()?.type ?? null;
+
+        if (dataType === null || !this.isTokenOfDataType(dataType)) {
+            throw new InvalidTokenError();
+        }
+
+        this.consumeToken();
+
+        const identifier = this.peek();
+
+        if (identifier?.type !== TOKEN_TYPES.identifier) {
+            throw new InvalidIdentifierError();
+        }
+
+        this.consumeToken();
+        this.consumeToken(TOKEN_TYPES.openParenthesis);
+
+        const parameters: INodeStatementVariableDefinition[] = [];
+
+        while (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
+            parameters.push(this.parseVariableDefinition());
+
+            if (this.peek()?.type === TOKEN_TYPES.comma) {
+                this.consumeToken();
+
+                // A comma should not be directly succeeded by a close parenthesis.
+                if (this.peek()?.type === TOKEN_TYPES.closeParenthesis) {
+                    throw new InvalidTokenError();
+                }
+            }
+        }
+
+        this.consumeToken(TOKEN_TYPES.closeParenthesis);
+
+        const scope = this.parseScope();
+
+        return {
+            type: 'function',
+            dataType: this.convertDataTypeSpecifierToDataType(dataType),
+            identifier,
+            unsigned,
+            scope,
+            parameters,
+        } satisfies INodeStatementFunction;
+    }
+
+    private parseVariableDefinition(): INodeStatementVariableDefinition {
         let unsigned = false;
         let mutable = false;
 
@@ -183,6 +280,19 @@ class Parser {
         }
 
         this.consumeToken();
+
+        return {
+            type: 'variable-definition',
+            dataType: this.convertDataTypeSpecifierToDataType(dataType),
+            identifier,
+            mutable,
+            unsigned,
+        } satisfies INodeStatementVariableDefinition;
+    }
+
+    private parseVariable(): INodeStatementVariable {
+        const variableDefinition = this.parseVariableDefinition();
+
         this.consumeToken(TOKEN_TYPES.assignment);
 
         const expression = this.parseExpression();
@@ -191,11 +301,8 @@ class Parser {
 
         return {
             type: 'variable',
-            dataType: this.convertDataTypeSpecifierToDataType(dataType),
-            identifier,
+            definition: variableDefinition,
             expression,
-            mutable,
-            unsigned,
         } satisfies INodeStatementVariable;
     }
 
@@ -327,13 +434,56 @@ class Parser {
             case TOKEN_TYPES.integer: {
                 this.consumeToken();
 
-                return { type: 'term', term: { type: 'integer', literal: token.literal } };
+                return {
+                    type: 'term',
+                    term: {
+                        type: 'integer',
+                        literal: token.literal,
+                    } satisfies INodeExpressionTermIntegerLiteral,
+                };
             }
 
             case TOKEN_TYPES.identifier: {
                 this.consumeToken();
 
-                return { type: 'term', term: { type: 'identifier', literal: token.literal } };
+                if (this.peek()?.type === TOKEN_TYPES.openParenthesis) {
+                    this.consumeToken();
+
+                    // @todo add lookup to validate arguments instead of in generation.
+                    const functionArguments: TNodeExpression[] = [];
+
+                    while (this.peek()?.type !== TOKEN_TYPES.closeParenthesis) {
+                        functionArguments.push(this.parseExpression());
+
+                        if (this.peek()?.type === TOKEN_TYPES.comma) {
+                            this.consumeToken();
+
+                            // A comma should not be directly succeeded by a close parenthesis.
+                            if (this.peek()?.type === TOKEN_TYPES.closeParenthesis) {
+                                throw new InvalidTokenError();
+                            }
+                        }
+                    }
+
+                    this.consumeToken(TOKEN_TYPES.closeParenthesis);
+
+                    return {
+                        type: 'term',
+                        term: {
+                            type: 'function_call',
+                            literal: token.literal,
+                            arguments: functionArguments,
+                        } satisfies INodeExpressionTermFunctionCall,
+                    };
+                }
+
+                return {
+                    type: 'term',
+                    term: {
+                        type: 'identifier',
+                        literal: token.literal,
+                    } satisfies INodeExpressionTermIdentifier,
+                };
             }
 
             case TOKEN_TYPES.openParenthesis: {
@@ -343,7 +493,13 @@ class Parser {
 
                 this.consumeToken(TOKEN_TYPES.closeParenthesis);
 
-                return { type: 'term', term: { type: 'parenthesised', expression } };
+                return {
+                    type: 'term',
+                    term: {
+                        type: 'parenthesised',
+                        expression,
+                    } satisfies INodeExpressionTermParenthesised,
+                };
             }
 
             default: {
@@ -400,10 +556,6 @@ class Parser {
 
     private peek(offset: number = 0): IToken | null {
         return this.tokens.at(this.currentTokenPosition + offset) ?? null;
-    }
-
-    private reset(): void {
-        this.tokens.length = 0;
     }
 }
 

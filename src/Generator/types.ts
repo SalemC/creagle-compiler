@@ -1,4 +1,4 @@
-import { type TDataType } from '../Parser/types';
+import { type INodeStatementVariableDefinition, type TDataType } from '../Parser/types';
 
 export interface IDataTypeInfo {
     type: TDataType;
@@ -10,10 +10,20 @@ export interface IVariable extends IDataTypeInfo {
     mutable: boolean;
 }
 
+export interface IFunction {
+    label: string;
+    returnType: IDataTypeInfo;
+    parameters: INodeStatementVariableDefinition[];
+}
+
 export interface IScope {
     sizeBytes: number;
     variables: Record<string, IVariable>;
+    functions: Record<string, IFunction>;
+    returnType?: IDataTypeInfo;
 }
+
+export type TAssemblyStreamNames = Record<'main' | 'functions', string>;
 
 export type TRegister =
     | 'rax'

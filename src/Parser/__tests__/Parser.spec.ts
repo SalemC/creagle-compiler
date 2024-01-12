@@ -61,17 +61,20 @@ describe('Parser feature', () => {
         expect(statements).toEqual([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: {
-                        column: 5,
-                        row: 0,
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: {
+                            column: 5,
+                            row: 0,
+                        },
                     },
+                    mutable: false,
+                    unsigned: false,
                 },
-                mutable: false,
-                unsigned: false,
                 expression: {
                     type: 'term',
                     term: {
@@ -180,14 +183,19 @@ describe('Parser feature', () => {
         expect(statements).toEqual([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: {
-                        column: 5,
-                        row: 0,
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: {
+                            column: 5,
+                            row: 0,
+                        },
                     },
+                    mutable: false,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'term',
@@ -196,19 +204,22 @@ describe('Parser feature', () => {
                         literal: '420',
                     },
                 },
-                mutable: false,
-                unsigned: false,
             },
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'secondValue',
-                    location: {
-                        column: 11,
-                        row: 0,
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'secondValue',
+                        location: {
+                            column: 11,
+                            row: 0,
+                        },
                     },
+                    mutable: false,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'term',
@@ -217,8 +228,6 @@ describe('Parser feature', () => {
                         literal: 'value',
                     },
                 },
-                mutable: false,
-                unsigned: false,
             },
         ]);
     });
@@ -296,14 +305,19 @@ describe('Parser feature', () => {
         expect(statements).toEqual([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: {
-                        column: 5,
-                        row: 0,
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: {
+                            column: 5,
+                            row: 0,
+                        },
                     },
+                    mutable: false,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'binaryExpressionAdd',
@@ -322,8 +336,6 @@ describe('Parser feature', () => {
                         },
                     },
                 },
-                mutable: false,
-                unsigned: false,
             },
         ]);
     });
@@ -401,14 +413,19 @@ describe('Parser feature', () => {
         expect(statements).toEqual([
             {
                 type: 'variable',
-                dataType: 'byte',
-                identifier: {
-                    type: 'identifier',
-                    literal: 'value',
-                    location: {
-                        column: 5,
-                        row: 0,
+                definition: {
+                    type: 'variable-definition',
+                    dataType: 'byte',
+                    identifier: {
+                        type: 'identifier',
+                        literal: 'value',
+                        location: {
+                            column: 5,
+                            row: 0,
+                        },
                     },
+                    mutable: false,
+                    unsigned: false,
                 },
                 expression: {
                     type: 'binaryExpressionSubtract',
@@ -427,8 +444,6 @@ describe('Parser feature', () => {
                         },
                     },
                 },
-                mutable: false,
-                unsigned: false,
             },
         ]);
     });

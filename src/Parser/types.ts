@@ -1,18 +1,24 @@
 import { type IToken } from '../Lexer/types';
 
-interface INodeExpressionTermIdentifier {
-    literal: IToken['literal'];
+export interface INodeExpressionTermIdentifier {
     type: 'identifier';
-}
-
-interface INodeExpressionTermIntegerLiteral {
     literal: IToken['literal'];
-    type: 'integer';
 }
 
-interface INodeExpressionTermParenthesised {
+export interface INodeExpressionTermIntegerLiteral {
+    type: 'integer';
+    literal: IToken['literal'];
+}
+
+export interface INodeExpressionTermParenthesised {
     type: 'parenthesised';
     expression: TNodeExpression;
+}
+
+export interface INodeExpressionTermFunctionCall {
+    type: 'function_call';
+    literal: IToken['literal'];
+    arguments: TNodeExpression[];
 }
 
 export interface INodeExpressionTerm {
@@ -20,72 +26,57 @@ export interface INodeExpressionTerm {
     term:
         | INodeExpressionTermIntegerLiteral
         | INodeExpressionTermIdentifier
-        | INodeExpressionTermParenthesised;
+        | INodeExpressionTermParenthesised
+        | INodeExpressionTermFunctionCall;
 }
 
-interface INodeBinaryExpressionBase {
+interface INodeBinaryExpression<T extends string> {
+    type: T;
     lhs: TNodeExpression;
     rhs: TNodeExpression;
 }
 
-interface INodeBinaryExpressionAdd extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionAdd';
-}
+type TNodeBinaryExpressionAdd = INodeBinaryExpression<'binaryExpressionAdd'>;
+type TNodeBinaryExpressionSubtract = INodeBinaryExpression<'binaryExpressionSubtract'>;
+type TNodeBinaryExpressionMultiply = INodeBinaryExpression<'binaryExpressionMultiply'>;
+type TNodeBinaryExpressionDivide = INodeBinaryExpression<'binaryExpressionDivide'>;
+type TNodeBinaryExpressionCompare = INodeBinaryExpression<'binaryExpressionCompare'>;
 
-interface INodeBinaryExpressionSubtract extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionSubtract';
-}
+type TNodeBinaryExpressionGreaterThan = INodeBinaryExpression<'binaryExpressionGreaterThan'>;
+type TNodeBinaryExpressionGreaterThanOrEqual =
+    INodeBinaryExpression<'binaryExpressionGreaterThanOrEqual'>;
 
-interface INodeBinaryExpressionMultiply extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionMultiply';
-}
-
-interface INodeBinaryExpressionDivide extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionDivide';
-}
-
-interface INodeBinaryExpressionCompare extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionCompare';
-}
-
-interface INodeBinaryExpressionGreaterThan extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionGreaterThan';
-}
-
-interface INodeBinaryExpressionGreaterThanOrEqual extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionGreaterThanOrEqual';
-}
-
-interface INodeBinaryExpressionLessThan extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionLessThan';
-}
-
-interface INodeBinaryExpressionLessThanOrEqual extends INodeBinaryExpressionBase {
-    type: 'binaryExpressionLessThanOrEqual';
-}
+type TNodeBinaryExpressionLessThan = INodeBinaryExpression<'binaryExpressionLessThan'>;
+type TNodeBinaryExpressionLessThanOrEqual =
+    INodeBinaryExpression<'binaryExpressionLessThanOrEqual'>;
 
 export type TNodeBinaryExpression =
-    | INodeBinaryExpressionDivide
-    | INodeBinaryExpressionMultiply
-    | INodeBinaryExpressionAdd
-    | INodeBinaryExpressionSubtract
-    | INodeBinaryExpressionCompare
-    | INodeBinaryExpressionGreaterThan
-    | INodeBinaryExpressionGreaterThanOrEqual
-    | INodeBinaryExpressionLessThan
-    | INodeBinaryExpressionLessThanOrEqual;
+    | TNodeBinaryExpressionDivide
+    | TNodeBinaryExpressionMultiply
+    | TNodeBinaryExpressionAdd
+    | TNodeBinaryExpressionSubtract
+    | TNodeBinaryExpressionCompare
+    | TNodeBinaryExpressionGreaterThan
+    | TNodeBinaryExpressionGreaterThanOrEqual
+    | TNodeBinaryExpressionLessThan
+    | TNodeBinaryExpressionLessThanOrEqual;
 
 export type TNodeExpression = INodeExpressionTerm | TNodeBinaryExpression;
 
 export type TDataType = 'byte' | 'word' | 'dword' | 'qword';
 
-export interface INodeStatementVariable {
-    type: 'variable';
+export interface INodeStatementVariableDefinition {
+    type: 'variable-definition';
     dataType: TDataType;
     identifier: IToken;
-    expression: TNodeExpression;
     unsigned: boolean;
     mutable: boolean;
+}
+
+export interface INodeStatementVariable {
+    type: 'variable';
+    definition: INodeStatementVariableDefinition;
+    expression: TNodeExpression;
 }
 
 export interface INodeStatementVariableReassignment {
@@ -116,10 +107,27 @@ export interface INodeStatementWhile {
     scope: INodeScope;
 }
 
+export interface INodeStatementFunction {
+    type: 'function';
+    dataType: TDataType;
+    identifier: IToken;
+    unsigned: boolean;
+    scope: INodeScope;
+    parameters: INodeStatementVariableDefinition[];
+}
+
+export interface INodeStatementReturn {
+    type: 'return';
+    expression: TNodeExpression;
+}
+
 export type TNodeStatement =
     | INodeStatementVariable
     | INodeStatementVariableReassignment
     | INodeStatementTerminate
     | INodeScope
     | INodeStatementIf
-    | INodeStatementWhile;
+    | INodeStatementWhile
+    | INodeStatementFunction
+    | INodeStatementReturn
+    | INodeExpressionTerm;

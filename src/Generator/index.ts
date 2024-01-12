@@ -1,42 +1,59 @@
-import { type IVariable, type TRegister, type IScope, type IDataTypeInfo } from './types';
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
+import { FunctionRedeclarationError } from './errors/FunctionRedeclarationError';
 import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
+import { UndeclaredFunctionError } from './errors/UndeclaredFunctionError';
+import { ArgumentImbalanceError } from './errors/ArgumentImbalanceError';
+import { UnexpectedReturnError } from './errors/UnexpectedReturnError';
+import { MissingReturnError } from './errors/MissingReturnError';
 import { wrapInteger } from './helpers/wrapInteger';
+import {
+    type IVariable,
+    type TRegister,
+    type IScope,
+    type IDataTypeInfo,
+    type TAssemblyStreamNames,
+    type IFunction,
+} from './types';
 import {
     type INodeExpressionTerm,
     type TNodeExpression,
     type TNodeStatement,
     type TNodeBinaryExpression,
     type INodeScope,
+    type INodeStatementVariableDefinition,
 } from '../Parser/types';
 
 class Generator {
-    private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {} }];
-    private stackSizeBytes: number = 0;
+    private readonly scopes: IScope[] = [{ sizeBytes: 0, variables: {}, functions: {} }];
+    private assemblyEmissionStreamName: keyof TAssemblyStreamNames = 'main';
+    private currentFunctionIdentifier: string | null = null;
     private labelCount: number = 0;
-    private assembly: string = '';
+    private readonly assembly: TAssemblyStreamNames = {
+        main: '',
+        functions: '',
+    };
 
     public generateAssembly(statements: readonly TNodeStatement[]): string {
-        this.reset();
-
-        this.emit('global _start\n', false);
-        this.emit('_start:', false);
+        this.emitFunctionPrologue();
 
         statements.forEach(this.generateStatement.bind(this));
 
-        // Add an initial syscall to ensure the program always exits.
-        this.move('rax', '60');
-        this.move('rdi', '0');
-        this.emit('syscall');
+        // If the last token isn't terminate, we'll insert one to ensure we exit.
+        if (statements.at(-1)?.type !== 'terminate') {
+            this.move('rax', '60');
+            this.move('rdi', '0');
+            this.leave();
+            this.syscall();
+        }
 
-        return this.optimise();
+        return `global _start\n${this.assembly.functions}\n_start:\n${this.assembly.main}`;
     }
 
     private generateStatement(statement: TNodeStatement): void {
         switch (statement.type) {
             case 'variable': {
-                const identifier = statement.identifier.literal;
+                const identifier = statement.definition.identifier.literal;
 
                 if (this.getVariable(identifier) !== null) {
                     throw new IdentifierRedeclarationError(identifier);
@@ -44,17 +61,17 @@ class Generator {
 
                 this.generateExpression(
                     {
-                        type: statement.dataType,
-                        unsigned: statement.unsigned,
+                        type: statement.definition.dataType,
+                        unsigned: statement.definition.unsigned,
                     },
                     statement.expression,
                 );
 
                 this.getCurrentScope().variables[identifier] = {
-                    stackLocation: this.stackSizeBytes,
-                    type: statement.dataType,
-                    unsigned: statement.unsigned,
-                    mutable: statement.mutable,
+                    stackLocation: this.getCurrentScope().sizeBytes,
+                    type: statement.definition.dataType,
+                    unsigned: statement.definition.unsigned,
+                    mutable: statement.definition.mutable,
                 };
 
                 break;
@@ -81,10 +98,6 @@ class Generator {
                     statement.expression,
                 );
 
-                const variableStackLocation = this.getStackPointerOffset(
-                    this.stackSizeBytes - variable.stackLocation,
-                );
-
                 const fullRegister = 'rax';
                 const registerSubset = this.getRegisterFromDataType(variable.type, 'a');
 
@@ -96,19 +109,19 @@ class Generator {
 
                 // Direct memory to memory transfers are disallowed in x86-64 assembly,
                 // therefore we have to move into a register, then from the register to the address.
-                this.move(variableStackLocation, fullRegister);
+                this.move(this.getBasePointerOffset(variable.stackLocation), fullRegister);
 
                 break;
             }
 
             case 'scope': {
-                this.generateScope(statement);
+                this.generateAnonymousScope(statement);
 
                 break;
             }
 
             case 'if': {
-                const mainLabel = this.generateLabel('main');
+                const mainLabel = this.getLabel('main');
 
                 this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
 
@@ -117,19 +130,72 @@ class Generator {
                 this.compare('rax', '0');
                 this.jumpWhenZero(mainLabel);
 
-                this.generateScope(statement.scope);
+                this.generateAnonymousScope(statement.scope);
 
-                this.emit(`\n${mainLabel}:`, false);
+                this.emitLabel(mainLabel);
+
+                break;
+            }
+
+            case 'function': {
+                this.assemblyEmissionStreamName = 'functions';
+
+                const identifier = statement.identifier.literal;
+
+                if (this.getFunction(identifier) !== null) {
+                    throw new FunctionRedeclarationError(identifier);
+                }
+
+                const returnType: IDataTypeInfo = {
+                    type: statement.dataType,
+                    unsigned: statement.unsigned,
+                };
+
+                const label = this.getLabel(identifier);
+
+                // Preserve the current function identifier so all return statements
+                // can retrieve details about the function they're in.
+                this.currentFunctionIdentifier = identifier;
+
+                this.getCurrentScope().functions[identifier] = {
+                    label,
+                    returnType,
+                    parameters: statement.parameters,
+                };
+
+                this.emitLabel(label);
+                this.generateFunctionScope(statement.scope, statement.parameters, returnType);
+
+                this.assemblyEmissionStreamName = 'main';
+                this.currentFunctionIdentifier = null;
+
+                break;
+            }
+
+            case 'return': {
+                if (this.currentFunctionIdentifier === null) {
+                    throw new UnexpectedReturnError();
+                }
+
+                const currentFunction = this.getFunction(this.currentFunctionIdentifier);
+
+                if (currentFunction === null) {
+                    throw new UndeclaredFunctionError(this.currentFunctionIdentifier);
+                }
+
+                this.generateExpression(currentFunction.returnType, statement.expression);
+                // Move the result of the expression into rax, ready for function exit.
+                this.pop('rax');
+                this.emitFunctionEpilogue(currentFunction.parameters.length * 8);
 
                 break;
             }
 
             case 'while': {
-                const whileLabelStart = this.generateLabel('while_start');
-                const mainLabel = this.generateLabel('main');
+                const whileLabelStart = this.getLabel('while_start');
+                const mainLabel = this.getLabel('main');
 
-                this.emit(`\n${whileLabelStart}:`, false);
-
+                this.emitLabel(whileLabelStart);
                 this.generateExpression({ type: 'qword', unsigned: false }, statement.expression);
 
                 // Pop the value into rax so it's not left on the stack.
@@ -137,10 +203,11 @@ class Generator {
                 this.compare('rax', '0');
                 this.jumpWhenZero(mainLabel);
 
-                this.generateScope(statement.scope);
+                this.generateAnonymousScope(statement.scope);
 
                 this.jump(whileLabelStart);
-                this.emit(`\n${mainLabel}:`, false);
+
+                this.emitLabel(mainLabel);
 
                 break;
             }
@@ -150,7 +217,14 @@ class Generator {
 
                 this.move('rax', '60');
                 this.pop('rdi');
-                this.emit('syscall');
+                this.leave();
+                this.syscall();
+
+                break;
+            }
+
+            case 'term': {
+                this.generateTerm({ type: 'qword', unsigned: false }, statement.term);
 
                 break;
             }
@@ -161,19 +235,51 @@ class Generator {
         }
     }
 
-    private generateScope(scope: INodeScope): void {
-        this.scopes.push({ sizeBytes: 0, variables: {} });
+    private generateFunctionScope(
+        scope: INodeScope,
+        parameters: INodeStatementVariableDefinition[],
+        returnType: IDataTypeInfo,
+    ): void {
+        this.scopes.push({ sizeBytes: 0, variables: {}, functions: {}, returnType });
+
+        this.emitFunctionPrologue();
+
+        // Add the variables to the scope before we generate it.
+        parameters.forEach((parameter, index) => {
+            this.getCurrentScope().variables[parameter.identifier.literal] = {
+                // -16 to move us before the prologue and the return address.
+                stackLocation: -16 - index * 8,
+                mutable: parameter.mutable,
+                unsigned: parameter.unsigned,
+                type: parameter.dataType,
+            };
+        });
+
+        if (scope.statements.at(-1)?.type !== 'return') {
+            // When generating a function scope, it's guaranteed we have a function identifier.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            throw new MissingReturnError(this.currentFunctionIdentifier!);
+        }
+
+        scope.statements.forEach(this.generateStatement.bind(this));
+
+        // Remove the scope.
+        this.scopes.pop();
+    }
+
+    private generateAnonymousScope(scope: INodeScope): void {
+        this.scopes.push({ sizeBytes: 0, variables: {}, functions: {} });
 
         scope.statements.forEach(this.generateStatement.bind(this));
 
         const { sizeBytes } = this.getCurrentScope();
 
-        // Move the stack pointer back to where it was before this scope was created.
-        this.add('rsp', sizeBytes.toString(10));
+        // Deallocate the current scope by moving the stack pointer back to where it was before this scope was created.
+        if (sizeBytes > 0) {
+            this.add('rsp', sizeBytes.toString(10));
+        }
 
-        this.stackSizeBytes -= sizeBytes;
-
-        // Remove the scope along with all its variables.
+        // Remove the scope.
         this.scopes.pop();
     }
 
@@ -185,13 +291,13 @@ class Generator {
         this.generateExpression(dataTypeInfo, expression.lhs);
 
         const fullFirstRegister = 'rax';
-        const fullSecondRegister = 'rbx';
+        const fullSecondRegister = 'rcx';
 
         this.pop(fullFirstRegister);
         this.pop(fullSecondRegister);
 
         const firstRegister = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
-        const secondRegister = this.getRegisterFromDataType(dataTypeInfo.type, 'b');
+        const secondRegister = this.getRegisterFromDataType(dataTypeInfo.type, 'c');
 
         ({
             binaryExpressionAdd: (): void => this.add(firstRegister, secondRegister),
@@ -300,10 +406,7 @@ class Generator {
 
                 const fullRegister = 'rax';
                 const registerSubset = this.getRegisterFromDataType(dataTypeInfo.type, 'a');
-
-                const variableStackLocation = this.getStackPointerOffset(
-                    this.stackSizeBytes - variable.stackLocation,
-                );
+                const variableStackLocation = this.getBasePointerOffset(variable.stackLocation);
 
                 if (registerSubset === fullRegister) {
                     this.move(fullRegister, variableStackLocation);
@@ -321,6 +424,52 @@ class Generator {
                 break;
             }
 
+            case 'function_call': {
+                const identifier = term.literal;
+
+                const functionDefinition = this.getFunction(identifier);
+
+                if (functionDefinition === null) {
+                    throw new UndeclaredFunctionError(identifier);
+                }
+
+                if (term.arguments.length !== functionDefinition.parameters.length) {
+                    throw new ArgumentImbalanceError(
+                        term.arguments.length,
+                        functionDefinition.parameters.length,
+                    );
+                }
+
+                for (let i = term.arguments.length - 1; i >= 0; i -= 1) {
+                    // We've asserted this access is safe with the above balance check.
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    const parameter = functionDefinition.parameters[i]!;
+
+                    this.generateExpression(
+                        {
+                            type: parameter.dataType,
+                            unsigned: parameter.unsigned,
+                        } satisfies IDataTypeInfo,
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        term.arguments.at(i)!,
+                    );
+                }
+
+                this.call(functionDefinition.label);
+
+                // The return instruction handles balancing the stack once a function exits,
+                // but we still need to ensure the scope knows they've been deallocated.
+                if (term.arguments.length > 0) {
+                    const allocatedBytes = term.arguments.length * 8;
+
+                    this.getCurrentScope().sizeBytes -= allocatedBytes;
+                }
+
+                this.push('rax');
+
+                break;
+            }
+
             case 'parenthesised': {
                 this.generateExpression(dataTypeInfo, term.expression);
 
@@ -334,34 +483,39 @@ class Generator {
     }
 
     private getCurrentScope(): IScope {
-        const currentScope = this.scopes.at(-1) ?? null;
-
-        if (currentScope !== null) {
-            return currentScope;
-        }
-
-        // If there isn't already a scope, create a new one and return it.
-        const newScope: IScope = {
-            sizeBytes: 0,
-            variables: {},
-        };
-
-        this.scopes.push(newScope);
-
-        return newScope;
+        // There will always be at least one scope.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return this.scopes.at(-1)!;
     }
 
     private getVariable(identifier: string): IVariable | null {
-        if (this.scopes.length === 0) {
-            return null;
+        if (this.currentFunctionIdentifier !== null) {
+            // It's prohibited to reference variables outside the current function scope.
+            const scope = this.searchForScope(
+                (scope) => identifier in scope.variables || scope.returnType !== undefined,
+            );
+
+            return scope?.variables[identifier] ?? null;
         }
 
-        // Search through the current and the parent scopes for the variable.
-        for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
-            const scope = this.scopes.at(i) ?? null;
+        const scope = this.searchForScope((scope) => identifier in scope.variables);
 
-            if (scope !== null && identifier in scope.variables) {
-                return scope.variables[identifier] ?? null;
+        return scope?.variables[identifier] ?? null;
+    }
+
+    private getFunction(identifier: string): IFunction | null {
+        const scope = this.searchForScope((scope) => identifier in scope.functions);
+
+        return scope?.functions[identifier] ?? null;
+    }
+
+    private searchForScope(predicate: (scope: IScope) => boolean): IScope | null {
+        for (let i = this.scopes.length - 1; i >= 0; i -= 1) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const scope = this.scopes.at(i)!;
+
+            if (predicate(scope)) {
+                return scope;
             }
         }
 
@@ -408,19 +562,14 @@ class Generator {
         return wrapInteger(BigInt(min), BigInt(literal), BigInt(max));
     }
 
-    private optimise(): string {
-        // Remove any sequential push and pops, the value will already be in the register.
-        return this.assembly.replaceAll(/\n^ *push (\w+)\n^ *pop \1/gm, '');
-    }
-
-    private generateLabel(prefix?: string): string {
+    private getLabel(label: string): string {
         const labelCount = (this.labelCount += 1);
 
-        return `${prefix === null ? '' : `${prefix}_`}label_${labelCount}`;
+        return `${label}_${labelCount}`;
     }
 
-    private getStackPointerOffset(offset: number): string {
-        return offset === 0 ? '[rsp]' : `[rsp + ${offset.toString(10)}]`;
+    private getBasePointerOffset(offset: number): string {
+        return `[rbp ${offset >= 0 ? '-' : '+'} ${Math.abs(offset).toString(10)}]`;
     }
 
     private setIfGreaterThanOrEqual(register: TRegister): void {
@@ -447,14 +596,28 @@ class Generator {
         this.emit(`push ${sourceRegister}`);
 
         this.getCurrentScope().sizeBytes += 8;
-        this.stackSizeBytes += 8;
+    }
+
+    private call(functionLabel: string): void {
+        this.emit(`call ${functionLabel}`);
+    }
+
+    private return(allocatedBytes?: number): void {
+        if (allocatedBytes === undefined || allocatedBytes === 0) {
+            return this.emit('ret');
+        }
+
+        this.emit(`ret ${allocatedBytes.toString(10)}`);
+    }
+
+    private leave(): void {
+        this.emit('leave');
     }
 
     private pop(destinationRegister: TRegister): void {
         this.emit(`pop ${destinationRegister}`);
 
         this.getCurrentScope().sizeBytes -= 8;
-        this.stackSizeBytes -= 8;
     }
 
     private jumpWhenZero(label: string): void {
@@ -471,6 +634,10 @@ class Generator {
 
     private move(register: TRegister, value: TRegister): void {
         this.emit(`mov ${register}, ${value}`);
+    }
+
+    private syscall(): void {
+        this.emit('syscall');
     }
 
     private moveAndExtend(
@@ -515,12 +682,26 @@ class Generator {
         this.emit(`${instruction} ${register}`);
     }
 
-    private emit(text: string, indent: boolean = true): void {
-        this.assembly += `${indent ? '    ' : ''}${text}\n`;
+    private emitFunctionEpilogue(allocatedBytes?: number): void {
+        this.leave();
+        this.return(allocatedBytes);
     }
 
-    private reset(): void {
-        this.assembly = '';
+    private emitFunctionPrologue(): void {
+        this.push('rbp');
+        this.move('rbp', 'rsp');
+
+        // Even though we've just pushed to the stack, the current scope size needs to be 0
+        // because we've just created a new stack frame by moving rsp into rbp.
+        this.getCurrentScope().sizeBytes = 0;
+    }
+
+    private emitLabel(label: string): void {
+        this.emit(`\n${label}:`, false);
+    }
+
+    private emit(text: string, indent: boolean = true): void {
+        this.assembly[this.assemblyEmissionStreamName] += `${indent ? '    ' : ''}${text}\n`;
     }
 }
 
