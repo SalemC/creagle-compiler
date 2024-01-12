@@ -603,12 +603,11 @@ class Generator {
     }
 
     private return(allocatedBytes?: number): void {
-        const allocatedBytesString =
-            allocatedBytes === undefined || allocatedBytes === 0
-                ? ''
-                : ` ${allocatedBytes.toString(10)}`;
+        if (allocatedBytes === undefined || allocatedBytes === 0) {
+            return this.emit('ret');
+        }
 
-        this.emit(`ret${allocatedBytesString}`);
+        this.emit(`ret ${allocatedBytes.toString(10)}`);
     }
 
     private leave(): void {
