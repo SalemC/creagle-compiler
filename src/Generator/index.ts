@@ -4,8 +4,8 @@ import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { UndeclaredFunctionError } from './errors/UndeclaredFunctionError';
 import { ArgumentImbalanceError } from './errors/ArgumentImbalanceError';
+import { UnexpectedReturnError } from './errors/UnexpectedReturnError';
 import { MissingReturnError } from './errors/MissingReturnError';
-import { InvalidReturnError } from './errors/InvalidReturnError';
 import { wrapInteger } from './helpers/wrapInteger';
 import {
     type IVariable,
@@ -174,7 +174,7 @@ class Generator {
 
             case 'return': {
                 if (this.currentFunctionIdentifier === null) {
-                    throw new InvalidReturnError();
+                    throw new UnexpectedReturnError();
                 }
 
                 const currentFunction = this.getFunction(this.currentFunctionIdentifier);
