@@ -1,6 +1,6 @@
 class UndeclaredFunctionError extends Error {
-    constructor(identifier: string) {
-        super(`Undeclared function '${identifier}'.`);
+    constructor(functionName: string) {
+        super(`Undeclared function '${functionName}'.`);
     }
 }
 
