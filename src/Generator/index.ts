@@ -441,7 +441,7 @@ class Generator {
                 }
 
                 for (let i = term.arguments.length - 1; i >= 0; i -= 1) {
-                    // We've verified the balance for a safe check here with the above balance check.
+                    // We've asserted this access is safe with the above balance check.
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     const parameter = functionDefinition.parameters[i]!;
 
