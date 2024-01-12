@@ -1,4 +1,5 @@
 import { IdentifierRedeclarationError } from './errors/IdentifierRedeclarationError';
+import { FunctionRedeclarationError } from './errors/FunctionRedeclarationError';
 import { ConstantReassignmentError } from './errors/ConstantReassignmentError';
 import { UndeclaredIdentifierError } from './errors/UndeclaredIdentifierError';
 import { UndeclaredFunctionError } from './errors/UndeclaredFunctionError';
@@ -142,7 +143,7 @@ class Generator {
                 const identifier = statement.identifier.literal;
 
                 if (this.getFunction(identifier) !== null) {
-                    throw new IdentifierRedeclarationError(identifier);
+                    throw new FunctionRedeclarationError(identifier);
                 }
 
                 const returnType: IDataTypeInfo = {
