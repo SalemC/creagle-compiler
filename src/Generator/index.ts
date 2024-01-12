@@ -38,11 +38,13 @@ class Generator {
 
         statements.forEach(this.generateStatement.bind(this));
 
-        // Add an initial syscall to ensure the program always exits.
-        this.move('rax', '60');
-        this.move('rdi', '0');
-        this.leave();
-        this.syscall();
+        // If the last token isn't terminate, we'll insert one to ensure we exit.
+        if (statements.at(-1)?.type !== 'terminate') {
+            this.move('rax', '60');
+            this.move('rdi', '0');
+            this.leave();
+            this.syscall();
+        }
 
         return `global _start\n${this.assembly.functions}\n_start:\n${this.assembly.main}`;
     }
