@@ -73,17 +73,14 @@ class Lexer {
             }
 
             case '/': {
-                this.consumeCharacter();
-
-                if (this.peek() === '/') {
-                    this.consumeCharacter();
-
+                if (this.peek(1) === '/') {
                     // Consume all characters until we reach a new line or the end of the file.
                     while (this.peek() !== '\n' && this.peek() !== '\0') {
                         this.consumeCharacter();
                     }
                 } else {
                     this.recordToken(TOKEN_TYPES.forwardSlash, character);
+                    this.consumeCharacter();
                 }
 
                 break;
