@@ -1,0 +1,5 @@
+// There's only one way to write comments in Creagle, and that's using "//".
+// These comments are single line, and will skip any parsing of code beyond the last "/".
+
+// Exit the program with exit code 1.
+terminate(1);

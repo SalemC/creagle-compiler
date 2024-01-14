@@ -51,6 +51,13 @@ class Lexer {
                 break;
             }
 
+            case '\0': {
+                this.recordToken(TOKEN_TYPES.eof, character);
+                this.consumeCharacter();
+
+                return this.tokens;
+            }
+
             case '+': {
                 this.recordToken(TOKEN_TYPES.plus, character);
                 this.consumeCharacter();
@@ -66,8 +73,15 @@ class Lexer {
             }
 
             case '/': {
-                this.recordToken(TOKEN_TYPES.forwardSlash, character);
-                this.consumeCharacter();
+                if (this.peek(1) === '/') {
+                    // Consume all characters until we reach a new line or the end of the file.
+                    while (this.peek() !== '\n' && this.peek() !== '\0') {
+                        this.consumeCharacter();
+                    }
+                } else {
+                    this.recordToken(TOKEN_TYPES.forwardSlash, character);
+                    this.consumeCharacter();
+                }
 
                 break;
             }
@@ -171,13 +185,6 @@ class Lexer {
                 this.consumeCharacter();
 
                 break;
-            }
-
-            case '\0': {
-                this.recordToken(TOKEN_TYPES.eof, character);
-                this.consumeCharacter();
-
-                return this.tokens;
             }
 
             default: {
