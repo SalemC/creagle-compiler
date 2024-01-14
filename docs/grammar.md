@@ -13,8 +13,8 @@ $$
         [\text{Type}] \space \text{identifier}([\text{VariableDefinition}]^*, ...) \space [\text{Scope}] \\
         [\text{Term}]
     \end{cases} \\
-    [\text{Scope}] &\to [{\text{Statement}^*}] \\
     [\text{VariableDefinition}] &\to \space ?\text{mutable} \space [\text{Type}] \space \text{identifier} \\
+    [\text{Scope}] &\to [{\text{Statement}^*}] \\
     [\text{Type}] &\to
     \begin{cases}
         \text{?unsigned byte} \\
@@ -41,11 +41,10 @@ $$
     \end{cases} \\
     [\text{Term}] &\to
     \begin{cases}
-        [\text{IntegerLiteral}] \\
+        {1,2,3,\ldots,\infty} \\
         \text{identifier} \\
         \text{identifier}([\text{Expression}]^*, ...) \\
         ([\text{Expression}]) \\
     \end{cases} \\
-    [\text{IntegerLiteral}] &\to \{1,2,3,\ldots,\infty\} \\
 \end{align}
 $$
